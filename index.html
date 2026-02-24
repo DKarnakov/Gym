@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>💪</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Для графиков можно использовать Chart.js, но для простоты и клиентской работы я пока оставлю это без внешних библиотек.
+         Если нужна визуализация, можно интегрировать: <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> -->
+</head>
+<body>
+    <header>
+        <h1>Мой Фитнес-Трекер</h1>
+        <nav>
+            <button id="nav-exercises">Упражнения</button>
+            <button id="nav-planner">Планировщик</button>
+            <button id="nav-workout">Начать Тренировку</button>
+            <button id="nav-history">История</button>
+            <button id="nav-settings">Настройки</button>
+        </nav>
+    </header>
+
+    <main>
+        <!-- Раздел Управления Упражнениями -->
+        <section id="exercises-section" class="active">
+            <h2>Управление Упражнениями</h2>
+            <form id="exercise-form">
+                <input type="hidden" id="exercise-id">
+                <label for="exercise-name">Название упражнения:</label>
+                <input type="text" id="exercise-name" required minlength="3" placeholder="Например, Жим лежа">
+                <button type="submit">Сохранить упражнение</button>
+            </form>
+            <h3>Список Упражнений</h3>
+            <ul id="exercises-list"></ul>
+        </section>
+
+        <!-- Раздел Планирования Недели -->
+        <section id="planner-section" class="hidden">
+            <h2>Планирование Недели</h2>
+            <h3>Календарь Тренировок</h3>
+            <div id="weekly-calendar"></div>
+
+            <div id="day-workout-editor">
+                <h3>Тренировка на <span id="selected-day-display"></span></h3>
+                <form id="add-edit-workout-item-form">
+                    <input type="hidden" id="workout-item-id">
+                    <label for="available-exercises">Упражнение:</label>
+                    <select id="available-exercises" required>
+                        <option value="">Выберите упражнение</option>
+                    </select>
+                    <label for="exercise-weight">Вес (кг):</label>
+                    <input type="number" id="exercise-weight" placeholder="Вес (кг)" min="0" step="0.5" required>
+                    <label for="exercise-sets">Подходы:</label>
+                    <input type="number" id="exercise-sets" placeholder="Кол-во подходов" min="1" required>
+                    <label for="exercise-reps">Повторения:</label>
+                    <input type="number" id="exercise-reps" placeholder="Кол-во повторений" min="1" required>
+                    <button type="submit" id="add-update-exercise-to-day">Добавить упражнение</button>
+                </form>
+                <h3>Запланированные упражнения:</h3>
+                <ul id="current-day-exercises"></ul>
+                <button id="save-day-workout" class="hidden">Сохранить изменения дня</button>
+            </div>
+        </section>
+
+        <!-- Раздел Текущей Тренировки -->
+        <section id="workout-section" class="hidden">
+            <h2>Текущая Тренировка</h2>
+            <button id="start-workout">Начать тренировку</button>
+            <div id="workout-display" class="hidden">
+                <p class="workout-info">Упражнение: <span id="current-exercise-name"></span></p>
+                <p class="workout-info">Вес: <span id="current-exercise-weight"></span> кг</p>
+                <p class="workout-info">Подход: <span id="current-set-number"></span> из <span id="total-sets"></span></p>
+                <p class="workout-info">Повторения: <span id="current-reps"></span></p>
+                <button id="complete-set">Завершить подход</button>
+                <div id="rest-timer" class="hidden">
+                    <p>Отдых: <span id="timer-display">02:00</span></p>
+                    <button id="skip-rest">Пропустить отдых</button>
+                </div>
+                <p id="workout-message"></p>
+            </div>
+            <button id="finish-workout" class="hidden">Завершить тренировку</button>
+        </section>
+
+        <!-- Раздел Истории Тренировок -->
+        <section id="history-section" class="hidden">
+            <h2>История Тренировок</h2>
+            <ul id="workout-history-list">
+                <!-- Здесь будет отображаться история тренировок -->
+            </ul>
+            <h3>График Прогресса (пример)</h3>
+            <div id="progress-graph-container">
+                <canvas id="progressChart"></canvas> <!-- Placeholder for Chart.js -->
+                <p>Здесь можно было бы отобразить график прогресса. Например, изменение веса в жиме лежа со временем.</p>
+                <div id="simple-progress-view">
+                    <!-- Более простая текстовая/табличная визуализация без Chart.js -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Раздел Настроек -->
+        <section id="settings-section" class="hidden">
+            <h2>Настройки</h2>
+            <div class="setting-item">
+                <label for="rest-timer-duration">Длительность отдыха (секунды):</label>
+                <input type="number" id="rest-timer-duration" min="30" max="300" step="5" value="120">
+                <button id="save-settings">Сохранить настройки</button>
+            </div>
+            <div class="setting-item">
+                <label for="notification-sound">Звуковые уведомления:</label>
+                <input type="checkbox" id="notification-sound" checked>
+            </div>
+            <div class="setting-item">
+                <h3>Бэкап и Восстановление</h3>
+                <button id="export-data">Экспортировать данные (JSON)</button>
+                <input type="file" id="import-data-file" accept=".json" style="display: none;">
+                <button id="import-data">Импортировать данные</button>
+                <p class="note">При импорте текущие данные будут перезаписаны.</p>
+            </div>
+        </section>
+    </main>
+
+    <script src="script.js"></script>
+</body>
+</html>
