@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
+    <title>Фитнес‑трекер</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f5f7fa;  /* очень светлый серый */
+            color: #1e1e1e;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 12px;
+        }
+
+        /* Главный контейнер — имитация экрана iPhone 17 Pro Max */
+        .phone-frame {
+            max-width: 430px;  /* типичная ширина больших iPhone */
+            width: 100%;
+            background-color: #ffffff;
+            border-radius: 44px;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.12), 0 8px 20px rgba(0, 0, 0, 0.06);
+            overflow: hidden;
+            padding: 20px 18px 30px 18px;
+            position: relative;
+            border: 1px solid #e9e9e9;
+        }
+
+        h1, h2 {
+            font-size: 28px;
+            font-weight: 620;
+            letter-spacing: -0.3px;
+            color: #1c1c1e;
+            margin-bottom: 16px;
+            padding-left: 4px;
+        }
+
+        /* ===== ПЛАШКИ ДНЕЙ ===== */
+        .days-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 6px;
+            margin-bottom: 28px;
+        }
+
+        .day-chip {
+            flex: 1 1 0px;
+            text-align: center;
+            background-color: #f0f2f5;  /* светлый серый */
+            padding: 12px 0;
+            border-radius: 20px;
+            font-weight: 500;
+            font-size: 16px;
+            color: #2c2c2e;
+            border: 1.5px solid transparent;
+            transition: all 0.1s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .day-chip.current-day {
+            border-color: #ff9500;  /* оранжевый */
+            background-color: #fff1e0;
+            color: #1c1c1e;
+            font-weight: 600;
+        }
+
+        .day-chip.selected-day {
+            background-color: #c4e1f6;  /* голубой */
+            color: #003458;
+            border-color: #007aff;
+        }
+
+        /* ===== СПИСОК УПРАЖНЕНИЙ ===== */
+        .exercises-container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        /* Карточка упражнения */
+        .exercise-card {
+            background-color: #fafafc;
+            border-radius: 24px;
+            padding: 16px 18px;
+            border: 1px solid #eceef0;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.02);
+            transition: 0.15s;
+            cursor: grab;
+            user-select: none;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            position: relative;
+        }
+
+        .exercise-card.dragging {
+            opacity: 0.5;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.1);
+            cursor: grabbing;
+        }
+
+        .card-main-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .exercise-title {
+            font-size: 18px;
+            font-weight: 590;
+            color: #111;
+            max-width: 160px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .set-badge {
+            background-color: #e6e8ec;
+            padding: 6px 14px;
+            border-radius: 30px;
+            font-size: 16px;
+            font-weight: 530;
+            color: #1c1c1e;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .set-badge .current-set {
+            color: #ff6900; /* оранжевый */
+            font-weight: 700;
+        }
+
+        .weight-reps-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 16px;
+            background-color: #ffffff;
+            padding: 10px 14px;
+            border-radius: 40px;
+            border: 1px solid #e2e4e8;
+            flex-wrap: wrap;
+        }
+
+        .weight-info, .reps-info {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .rest-timer-area {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background-color: #d9eafb;  /* голубой очень бледный */
+            padding: 6px 16px;
+            border-radius: 40px;
+            font-size: 16px;
+            font-weight: 500;
+            color: #00568f;
+        }
+
+        .play-pause-btn {
+            background: none;
+            border: none;
+            font-size: 30px;
+            line-height: 1;
+            cursor: pointer;
+            color: #007aff; /* голубой */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background-color: #eef5fe;
+            transition: 0.1s;
+        }
+
+        .play-pause-btn:active {
+            background-color: #cde1fc;
+        }
+
+        .completed-mark {
+            font-size: 24px;
+            margin-left: 6px;
+            color: #28a745;
+        }
+
+        /* Плашка "Добавить упражнение" */
+        .add-exercise-card {
+            background-color: #f2f4f8;
+            border-radius: 24px;
+            padding: 18px;
+            text-align: center;
+            font-size: 18px;
+            font-weight: 500;
+            color: #636366;
+            border: 2px dashed #b0b3b8;
+            cursor: pointer;
+            transition: 0.1s;
+            margin-bottom: 20px;
+        }
+        .add-exercise-card:active {
+            background-color: #e2e5ea;
+        }
+
+        /* Нижние кнопки */
+        .bottom-buttons {
+            display: flex;
+            justify-content: space-around;
+            gap: 15px;
+            margin-top: 16px;
+        }
+        .nav-btn {
+            flex: 1;
+            background-color: #ffffff;
+            border: 1.5px solid #d0d3d9;
+            border-radius: 40px;
+            padding: 16px 10px;
+            font-size: 18px;
+            font-weight: 590;
+            color: #1c1c1e;
+            cursor: pointer;
+            text-align: center;
+            transition: 0.1s;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+        }
+        .nav-btn:active {
+            background-color: #eef1f5;
+        }
+
+        /* Экраны (главная/настройки/история) */
+        .screen {
+            display: block;
+        }
+        .hidden {
+            display: none !important;
+        }
+
+        /* Настройки */
+        .settings-group {
+            background-color: #fafafc;
+            border-radius: 26px;
+            padding: 18px;
+            margin-bottom: 28px;
+            border: 1px solid #ecedef;
+        }
+        .exercise-item-settings {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 10px;
+            background: white;
+            border-radius: 30px;
+            padding: 12px 14px;
+            margin-bottom: 10px;
+            border: 1px solid #dddfe3;
+        }
+        .exercise-item-settings input {
+            border: 1px solid #c6c8cc;
+            border-radius: 30px;
+            padding: 10px 14px;
+            font-size: 16px;
+            background: white;
+            width: 140px;
+        }
+        .counter-control {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: #f0f2f5;
+            border-radius: 40px;
+            padding: 4px 10px;
+        }
+        .counter-control button {
+            width: 34px;
+            height: 34px;
+            border-radius: 30px;
+            border: none;
+            background: white;
+            font-size: 22px;
+            font-weight: 600;
+            color: #1c1c1e;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        .rest-timer-setting {
+            margin: 15px 0;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .export-import {
+            display: flex;
+            gap: 12px;
+            margin-top: 25px;
+            flex-wrap: wrap;
+        }
+        .gray-btn {
+            background-color: #eef0f3;
+            border: none;
+            border-radius: 40px;
+            padding: 16px 22px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+        }
+
+        /* История */
+        .history-table {
+            background: #f8f9fc;
+            border-radius: 30px;
+            padding: 12px;
+            border: 1px solid #e1e4e8;
+        }
+        .history-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 14px 12px;
+            border-bottom: 1px solid #dee1e6;
+        }
+
+        /* Вспомогательное */
+        .timer-value {
+            font-family: 'Courier New', monospace;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+<div class="phone-frame" id="app">
+    <!-- Главный экран -->
+    <div id="mainScreen" class="screen">
+        <h1>Фитнес‑трекер</h1>
+
+        <!-- Плашки дней -->
+        <div class="days-row" id="daysContainer"></div>
+
+        <!-- Список упражнений (draggable) -->
+        <div class="exercises-container" id="exercisesList"></div>
+
+        <!-- Добавить упражнение -->
+        <div class="add-exercise-card" id="addExerciseBtn">+ Добавить упражнение</div>
+
+        <!-- Кнопки навигации -->
+        <div class="bottom-buttons">
+            <button class="nav-btn" id="goToSettingsBtn">Настройки</button>
+            <button class="nav-btn" id="goToHistoryBtn">История</button>
+        </div>
+    </div>
+
+    <!-- Экран Настройки -->
+    <div id="settingsScreen" class="screen hidden">
+        <h2 style="margin-bottom: 8px;">Настройки</h2>
+        <button id="backFromSettings" style="background:none; border:none; font-size:20px; margin-bottom:12px;">← Назад</button>
+        <div class="settings-group" id="exercisesSettingsList"></div>
+
+        <div class="rest-timer-setting">
+            <span style="font-weight:500;">Таймер отдыха (сек):</span>
+            <input type="number" id="globalRestSeconds" value="60" min="5" max="300" step="5" style="width:80px; border-radius:30px; padding:8px; border:1px solid #aaa;">
+        </div>
+
+        <div class="export-import">
+            <button class="gray-btn" id="exportHistory">📤 Экспорт истории</button>
+            <button class="gray-btn" id="importHistory">📥 Импорт истории</button>
+        </div>
+        <p style="color:gray; font-size:14px; margin-top:16px;">* История сохраняется локально</p>
+    </div>
+
+    <!-- Экран История -->
+    <div id="historyScreen" class="screen hidden">
+        <h2>История</h2>
+        <button id="backFromHistory" style="background:none; border:none; font-size:20px; margin-bottom:12px;">← Назад</button>
+        <div class="history-table" id="historyLog"></div>
+    </div>
+</div>
+
+<script>
+    (function() {
+        // ----- Хранилище данных (LocalStorage) -----
+        const STORAGE_KEYS = {
+            EXERCISES: 'fit_exercises_library',   // библиотека упражнений для настроек
+            WORKOUTS: 'fit_workouts_data',        // тренировки по дням
+            HISTORY: 'fit_history',                // история выполнений
+            REST_SEC: 'fit_rest_seconds'
+        };
+
+        // Библиотека упражнений (по умолчанию)
+        let exerciseLibrary = [
+            { id: 'e1', name: 'Жим лёжа', weight: 50.0, sets: 3, reps: 10 },
+            { id: 'e2', name: 'Приседания', weight: 60.0, sets: 4, reps: 12 },
+            { id: 'e3', name: 'Тяга верх', weight: 40.0, sets: 3, reps: 8 },
+        ];
+
+        // Структура тренировок по дням (7 дней, индексы 0-6 = пн-вс)
+        let workouts = [
+            [], // пн
+            [], // вт
+            [], // ср
+            [], // чт
+            [], // пт
+            [], // сб
+            []  // вс
+        ];
+
+        // История тренировок: массив записей { date, dayIndex, exerciseName, weight, sets, reps, completedAt }
+        let historyLog = [];
+
+        let restSecondsDefault = 60; // секунд
+
+        // Загрузка из localStorage
+        function loadAllData() {
+            try {
+                const lib = localStorage.getItem(STORAGE_KEYS.EXERCISES);
+                if (lib) exerciseLibrary = JSON.parse(lib);
+
+                const wk = localStorage.getItem(STORAGE_KEYS.WORKOUTS);
+                if (wk) workouts = JSON.parse(wk);
+                else initializeWorkoutsFromLibrary(); // начальная генерация
+
+                const hist = localStorage.getItem(STORAGE_KEYS.HISTORY);
+                if (hist) historyLog = JSON.parse(hist);
+
+                const rest = localStorage.getItem(STORAGE_KEYS.REST_SEC);
+                if (rest) restSecondsDefault = parseInt(rest, 10);
+            } catch (e) { console.warn("Load error", e); }
+        }
+
+        // Сохранение всего
+        function saveAll() {
+            localStorage.setItem(STORAGE_KEYS.EXERCISES, JSON.stringify(exerciseLibrary));
+            localStorage.setItem(STORAGE_KEYS.WORKOUTS, JSON.stringify(workouts));
+            localStorage.setItem(STORAGE_KEYS.HISTORY, JSON.stringify(historyLog));
+            localStorage.setItem(STORAGE_KEYS.REST_SEC, restSecondsDefault);
+        }
+
+        // При отсутствии тренировок создаём демо-тренировку на понедельник
+        function initializeWorkoutsFromLibrary() {
+            if (workouts.every(day => day.length === 0)) {
+                workouts[0] = exerciseLibrary.map(ex => ({
+                    ...ex,
+                    id: crypto.randomUUID ? crypto.randomUUID() : 'id-'+Date.now()+Math.random(),
+                    completedSets: 0,
+                    isCompleted: false,
+                    restEndTime: null,
+                    timerPaused: false
+                }));
+            }
+        }
+
+        loadAllData();
+        if (!workouts[0] || workouts[0].length === 0) initializeWorkoutsFromLibrary();
+
+        // Текущее состояние UI
+        let currentDayIndex = new Date().getDay(); // 0 вс,1 пн ... 6 сб — корректируем
+        if (currentDayIndex === 0) currentDayIndex = 6; // вс -> индекс 6
+        else currentDayIndex = currentDayIndex - 1; // пн=0, вт=1 ...
+
+        let selectedDayIndex = currentDayIndex; // выбранный день
+
+        // Таймеры
+        let timers = {}; // id упражнения -> интервал
+
+        // ----- Вспомогательные функции -----
+        function formatTime(seconds) {
+            const m = Math.floor(seconds / 60);
+            const s = seconds % 60;
+            return `${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+        }
+
+        // Отрисовка главного экрана
+        function renderMain() {
+            renderDays();
+            renderExercises();
+        }
+
+        function renderDays() {
+            const days = ['пн', 'вт', 'ср', 'чт', 'пт', 'сб', 'вс'];
+            const container = document.getElementById('daysContainer');
+            container.innerHTML = '';
+            days.forEach((day, idx) => {
+                const chip = document.createElement('div');
+                chip.classList.add('day-chip');
+                chip.textContent = day;
+                if (idx === currentDayIndex) chip.classList.add('current-day');
+                if (idx === selectedDayIndex) chip.classList.add('selected-day');
+                chip.addEventListener('click', () => {
+                    selectedDayIndex = idx;
+                    renderDays();
+                    renderExercises();
+                });
+                container.appendChild(chip);
+            });
+        }
+
+        function renderExercises() {
+            const container = document.getElementById('exercisesList');
+            container.innerHTML = '';
+            const dayWorkouts = workouts[selectedDayIndex] || [];
+            dayWorkouts.forEach((ex, index) => {
+                const card = document.createElement('div');
+                card.classList.add('exercise-card');
+                card.setAttribute('draggable', 'true');
+                card.dataset.index = index;
+                card.dataset.id = ex.id;
+
+                // Логика completed
+                const allSetsDone = ex.completedSets >= ex.sets;
+                if (allSetsDone) card.style.backgroundColor = '#e6f2e6';
+
+                // Заголовок + вес/повторения
+                const mainRow = document.createElement('div');
+                mainRow.className = 'card-main-row';
+                mainRow.innerHTML = `
+                    <span class="exercise-title">${ex.name}</span>
+                    <span class="set-badge"><span class="current-set">${ex.completedSets || 0}</span>/${ex.sets}</span>
+                `;
+
+                const weightReps = document.createElement('div');
+                weightReps.className = 'weight-reps-row';
+                weightReps.innerHTML = `
+                    <span class="weight-info">⚖️ ${ex.weight} кг</span>
+                    <span class="reps-info">🔁 ${ex.reps} повт.</span>
+                `;
+
+                // Кнопка Play/Pause и зона отдыха/таймера
+                const controls = document.createElement('div');
+                controls.style.display = 'flex';
+                controls.style.alignItems = 'center';
+                controls.style.justifyContent = 'space-between';
+
+                const btn = document.createElement('button');
+                btn.className = 'play-pause-btn';
+                const isPaused = ex.restEndTime && new Date().getTime() < ex.restEndTime;
+                const isResting = isPaused && !ex.timerPaused; // упрощённо
+                if (ex.completedSets >= ex.sets) {
+                    btn.innerHTML = '✅';
+                    btn.disabled = true;
+                } else if (ex.restEndTime && new Date().getTime() < ex.restEndTime) {
+                    btn.innerHTML = '⏸️'; // пауза
+                } else {
+                    btn.innerHTML = '▶️';
+                }
+
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    handlePlayPause(ex.id);
+                });
+
+                controls.appendChild(btn);
+
+                const restArea = document.createElement('div');
+                restArea.className = 'rest-timer-area';
+                if (ex.restEndTime && new Date().getTime() < ex.restEndTime) {
+                    const remain = Math.max(0, Math.floor((ex.restEndTime - new Date().getTime())/1000));
+                    restArea.innerHTML = `Отдых <span class="timer-value">${formatTime(remain)}</span>`;
+                } else if (ex.completedSets < ex.sets && ex.completedSets > 0 && !ex.restEndTime) {
+                    // ничего не показываем
+                }
+                if (restArea.innerHTML !== '') controls.appendChild(restArea);
+
+                card.appendChild(mainRow);
+                card.appendChild(weightReps);
+                card.appendChild(controls);
+
+                // drag & drop
+                card.addEventListener('dragstart', handleDragStart);
+                card.addEventListener('dragend', handleDragEnd);
+                card.addEventListener('dragover', handleDragOver);
+                card.addEventListener('drop', handleDrop);
+
+                container.appendChild(card);
+            });
+        }
+
+        // Перетаскивание
+        let dragSrcIndex = null;
+        function handleDragStart(e) {
+            dragSrcIndex = e.target.closest('.exercise-card')?.dataset.index;
+            e.dataTransfer.effectAllowed = 'move';
+        }
+        function handleDragEnd(e) { }
+        function handleDragOver(e) { e.preventDefault(); }
+        function handleDrop(e) {
+            e.preventDefault();
+            const targetCard = e.target.closest('.exercise-card');
+            if (!targetCard) return;
+            const dragIndex = parseInt(dragSrcIndex, 10);
+            const dropIndex = parseInt(targetCard.dataset.index, 10);
+            if (dragIndex === dropIndex) return;
+
+            const dayExercises = workouts[selectedDayIndex];
+            if (!dayExercises) return;
+            const [removed] = dayExercises.splice(dragIndex, 1);
+            dayExercises.splice(dropIndex, 0, removed);
+            saveAll();
+            renderExercises();
+        }
+
+        // Обработка play/pause
+        function handlePlayPause(exId) {
+            const day = workouts[selectedDayIndex];
+            const ex = day.find(e => e.id === exId);
+            if (!ex || ex.completedSets >= ex.sets) return;
+
+            // Если сейчас активен таймер отдыха
+            if (ex.restEndTime && new Date().getTime() < ex.restEndTime) {
+                // нажатие на pause -> сброс таймера (досрочно)
+                if (timers[exId]) clearInterval(timers[exId]);
+                ex.restEndTime = null;
+                saveAll();
+                renderExercises();
+                return;
+            }
+
+            // Иначе запускаем подход: увеличиваем completedSets
+            if (!ex.completedSets) ex.completedSets = 0;
+            ex.completedSets += 1;
+
+            // Если выполнили все подходы
+            if (ex.completedSets >= ex.sets) {
+                // запись в историю
+                historyLog.push({
+                    date: new Date().toLocaleString(),
+                    dayIndex: selectedDayIndex,
+                    exerciseName: ex.name,
+                    weight: ex.weight,
+                    sets: ex.sets,
+                    reps: ex.reps,
+                    completedAt: new Date().toISOString()
+                });
+                ex.restEndTime = null;
+                if (timers[exId]) clearInterval(timers[exId]);
+                saveAll();
+                renderExercises();
+                return;
+            }
+
+            // Иначе запускаем таймер отдыха (restSecondsDefault)
+            const restSec = restSecondsDefault;
+            const endTime = new Date().getTime() + restSec * 1000;
+            ex.restEndTime = endTime;
+
+            if (timers[exId]) clearInterval(timers[exId]);
+            timers[exId] = setInterval(() => {
+                if (!ex.restEndTime) {
+                    clearInterval(timers[exId]);
+                    delete timers[exId];
+                    return;
+                }
+                const now = new Date().getTime();
+                if (now >= ex.restEndTime) {
+                    ex.restEndTime = null;
+                    clearInterval(timers[exId]);
+                    delete timers[exId];
+                }
+                renderExercises();
+            }, 200);
+
+            saveAll();
+            renderExercises();
+        }
+
+        // Добавление упражнения
+        document.getElementById('addExerciseBtn').addEventListener('click', () => {
+            if (exerciseLibrary.length === 0) return;
+            // Создаём копию из первого упражнения библиотеки (упрощённо, лучше выбрать через prompt)
+            const libItem = exerciseLibrary[0];
+            const newEx = {
+                ...libItem,
+                id: crypto.randomUUID ? crypto.randomUUID() : 'id-'+Date.now(),
+                completedSets: 0,
+                restEndTime: null
+            };
+            workouts[selectedDayIndex].push(newEx);
+            saveAll();
+            renderExercises();
+        });
+
+        // Переключение экранов
+        document.getElementById('goToSettingsBtn').addEventListener('click', () => {
+            document.getElementById('mainScreen').classList.add('hidden');
+            document.getElementById('settingsScreen').classList.remove('hidden');
+            renderSettings();
+        });
+        document.getElementById('goToHistoryBtn').addEventListener('click', () => {
+            document.getElementById('mainScreen').classList.add('hidden');
+            document.getElementById('historyScreen').classList.remove('hidden');
+            renderHistory();
+        });
+        document.getElementById('backFromSettings').addEventListener('click', () => {
+            document.getElementById('settingsScreen').classList.add('hidden');
+            document.getElementById('mainScreen').classList.remove('hidden');
+            renderMain();
+        });
+        document.getElementById('backFromHistory').addEventListener('click', () => {
+            document.getElementById('historyScreen').classList.add('hidden');
+            document.getElementById('mainScreen').classList.remove('hidden');
+            renderMain();
+        });
+
+        // Настройки
+        function renderSettings() {
+            const container = document.getElementById('exercisesSettingsList');
+            container.innerHTML = '';
+            exerciseLibrary.forEach((ex, idx) => {
+                const div = document.createElement('div');
+                div.className = 'exercise-item-settings';
+                div.innerHTML = `
+                    <input type="text" value="${ex.name}" placeholder="Название" data-idx="${idx}" data-field="name">
+                    <div class="counter-control">
+                        <button data-idx="${idx}" data-field="weight" data-delta="-0.5">−</button>
+                        <span>${ex.weight} кг</span>
+                        <button data-idx="${idx}" data-field="weight" data-delta="0.5">+</button>
+                    </div>
+                    <div class="counter-control">
+                        <button data-idx="${idx}" data-field="sets" data-delta="-1">−</button>
+                        <span>${ex.sets} сет</span>
+                        <button data-idx="${idx}" data-field="sets" data-delta="1">+</button>
+                    </div>
+                    <div class="counter-control">
+                        <button data-idx="${idx}" data-field="reps" data-delta="-1">−</button>
+                        <span>${ex.reps} повт</span>
+                        <button data-idx="${idx}" data-field="reps" data-delta="1">+</button>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+
+            // обработчики кнопок
+            document.querySelectorAll('.counter-control button').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const idx = e.target.dataset.idx;
+                    const field = e.target.dataset.field;
+                    const delta = parseFloat(e.target.dataset.delta);
+                    if (exerciseLibrary[idx]) {
+                        if (field === 'weight') exerciseLibrary[idx].weight = Math.max(0, exerciseLibrary[idx].weight + delta);
+                        if (field === 'sets') exerciseLibrary[idx].sets = Math.max(1, exerciseLibrary[idx].sets + delta);
+                        if (field === 'reps') exerciseLibrary[idx].reps = Math.max(1, exerciseLibrary[idx].reps + delta);
+                        saveAll();
+                        renderSettings();
+                    }
+                });
+            });
+
+            // инпуты названий
+            document.querySelectorAll('.exercise-item-settings input').forEach(inp => {
+                inp.addEventListener('change', (e) => {
+                    const idx = e.target.dataset.idx;
+                    exerciseLibrary[idx].name = e.target.value;
+                    saveAll();
+                });
+            });
+
+            // таймер отдыха
+            const restInput = document.getElementById('globalRestSeconds');
+            restInput.value = restSecondsDefault;
+            restInput.addEventListener('change', (e) => {
+                restSecondsDefault = parseInt(e.target.value, 10) || 60;
+                saveAll();
+            });
+        }
+
+        // История
+        function renderHistory() {
+            const cont = document.getElementById('historyLog');
+            cont.innerHTML = historyLog.length === 0 ? '<div class="history-row">Нет записей</div>' : '';
+            historyLog.slice().reverse().forEach(entry => {
+                const row = document.createElement('div');
+                row.className = 'history-row';
+                row.innerHTML = `<span>${entry.exerciseName} ${entry.weight}кг ${entry.sets}x${entry.reps}</span><span style="color:gray;">${new Date(entry.completedAt).toLocaleDateString()}</span>`;
+                cont.appendChild(row);
+            });
+        }
+
+        // Экспорт/импорт
+        document.getElementById('exportHistory').addEventListener('click', () => {
+            const dataStr = JSON.stringify(historyLog);
+            navigator.clipboard.writeText(dataStr).then(() => alert('История скопирована в буфер'));
+        });
+        document.getElementById('importHistory').addEventListener('click', () => {
+            const data = prompt('Вставьте JSON истории');
+            try {
+                if (data) {
+                    historyLog = JSON.parse(data);
+                    saveAll();
+                    alert('История импортирована');
+                }
+            } catch { alert('Ошибка'); }
+        });
+
+        // Старт
+        renderMain();
+    })();
+</script>
+</body>
+</html>
