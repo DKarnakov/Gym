@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>💪</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="page-shell">
+    <header class="hero">
+      <div>
+        <p class="eyebrow">Мой фитнес-трекер</p>
+        <h1>Fit Flow</h1>
+        <p class="hero-copy">Планируйте тренировку, фиксируйте подходы и запускайте упражнения по очереди с автоматическим таймером отдыха на 2 минуты.</p>
+      </div>
+      <div class="hero-stats">
+        <article>
+          <span id="exerciseCount">0</span>
+          <p>упражнений в базе</p>
+        </article>
+        <article>
+          <span id="workoutCount">0</span>
+          <p>сохранённых тренировок</p>
+        </article>
+      </div>
+    </header>
+
+    <main class="dashboard">
+      <section class="panel">
+        <div class="panel-heading">
+          <div>
+            <p class="section-kicker">Шаг 1</p>
+            <h2>Упражнения</h2>
+          </div>
+          <p class="panel-copy">Создайте библиотеку упражнений с количеством подходов и рабочими весами.</p>
+        </div>
+
+        <form id="exerciseForm" class="exercise-form">
+          <label>
+            <span>Тип упражнения</span>
+            <input id="exerciseName" name="exerciseName" type="text" maxlength="60" placeholder="Например, жим лёжа" required>
+          </label>
+          <label>
+            <span>Количество подходов</span>
+            <input id="exerciseSets" name="exerciseSets" type="number" min="1" max="20" value="3" required>
+          </label>
+          <label class="weights-field">
+            <span>Вес в подходах</span>
+            <input id="exerciseWeights" name="exerciseWeights" type="text" placeholder="Например, 60, 65, 65" required>
+            <small>Через запятую. Если значений меньше, последний вес повторится для остальных подходов.</small>
+          </label>
+          <button type="submit" class="primary-btn">Сохранить упражнение</button>
+        </form>
+
+        <div id="exerciseLibrary" class="card-list empty-state-host"></div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-heading">
+          <div>
+            <p class="section-kicker">Шаг 2</p>
+            <h2>Тренировки</h2>
+          </div>
+          <p class="panel-copy">Собирайте несколько тренировок, храните их локально и запускайте любую при необходимости.</p>
+        </div>
+
+        <form id="workoutForm" class="exercise-form">
+          <label>
+            <span>Название тренировки</span>
+            <input id="workoutName" name="workoutName" type="text" maxlength="60" placeholder="Например, Грудь и трицепс" required>
+          </label>
+          <button id="saveWorkoutBtn" class="primary-btn" type="submit">Сохранить тренировку</button>
+        </form>
+
+        <div id="savedWorkouts" class="workout-plan empty-state-host"></div>
+
+        <div class="subpanel">
+          <div class="panel-heading compact-heading">
+            <div>
+              <p class="section-kicker">Редактор</p>
+              <h3 id="editorWorkoutName">Новая тренировка</h3>
+            </div>
+            <p class="panel-copy">Добавляйте упражнения из библиотеки и меняйте порядок перетаскиванием.</p>
+          </div>
+
+          <div class="toolbar">
+            <button id="newWorkoutBtn" class="ghost-btn" type="button">Новая тренировка</button>
+            <button id="clearWorkoutBtn" class="ghost-btn" type="button">Очистить состав</button>
+          </div>
+
+          <div id="workoutPlan" class="workout-plan empty-state-host"></div>
+        </div>
+      </section>
+
+      <section class="panel runner-panel">
+        <div class="panel-heading">
+          <div>
+            <p class="section-kicker">Шаг 3</p>
+            <h2>Выполнение</h2>
+          </div>
+          <p class="panel-copy">После каждого завершённого подхода запускается отдых 2:00. Следующий подход можно начать по таймеру или вручную.</p>
+        </div>
+
+        <div id="runnerEmpty" class="runner-empty">
+          <h3>Тренировка не запущена</h3>
+          <p>Соберите тренировку и нажмите «Запустить тренировку».</p>
+        </div>
+
+        <div id="runnerView" class="runner hidden">
+          <div class="runner-header">
+            <div>
+              <p class="runner-label">Текущее упражнение</p>
+              <h3 id="currentExerciseName"></h3>
+            </div>
+            <div class="progress-chip">
+              <span id="currentExerciseIndex">0</span>
+              <p>из <span id="totalExercises">0</span></p>
+            </div>
+          </div>
+
+          <div class="set-card">
+            <div>
+              <p class="runner-label">Подход</p>
+              <h4 id="currentSetLabel"></h4>
+            </div>
+            <div>
+              <p class="runner-label">Вес</p>
+              <h4><span id="currentWeight">0</span> кг</h4>
+            </div>
+          </div>
+
+          <div class="timer-card">
+            <p class="runner-label">Отдых между подходами</p>
+            <div id="restTimer" class="timer-display">02:00</div>
+            <p id="timerStatus" class="timer-status">Таймер готов</p>
+          </div>
+
+          <div class="runner-actions">
+            <button id="completeSetBtn" class="primary-btn" type="button">Завершить подход</button>
+            <button id="skipRestBtn" class="ghost-btn" type="button">Пропустить отдых</button>
+            <button id="finishWorkoutBtn" class="danger-btn" type="button">Завершить тренировку</button>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <template id="emptyStateTemplate">
+    <div class="empty-state">
+      <h3></h3>
+      <p></p>
+    </div>
+  </template>
+
+  <script src="app.js"></script>
+</body>
+</html>
