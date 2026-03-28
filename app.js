@@ -143,7 +143,7 @@ function handleExerciseSubmit(event) {
 
   saveState();
   exerciseForm.reset();
-  exerciseSetsInput.value = "3";
+  exerciseSetsInput.value = "4";
   render();
 }
 
