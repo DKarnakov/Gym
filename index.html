@@ -171,10 +171,10 @@
     const n = Math.abs(number) % 100;
     const n1 = n % 10;
                 
-    if (n > 10 && n < 20) {return forms[2];}
-    if (n1 > 1 && n1 < 5) {return forms[1];}
-    if (n1 === 1) {return forms[0];}
-    return forms[2];
+    if (n > 10 && n < 20) {return number + " " + forms[2];}
+    if (n1 > 1 && n1 < 5) {return number + " " + forms[1];}
+    if (n1 === 1) {return number + " " + forms[0];}
+    return number + " " + forms[2];
   }
 
   function renderGroups() {
@@ -210,12 +210,12 @@
       card.className = `exercise-card ${ex.completed ? 'completed' : ''}`;
       card.dataset.index = idx;
       const pct = Math.min(100, (ex.done / ex.sets) * 100);
-      let exprogress = "Упражнение не начато"; 
+      let exprogress = getPlural(ex.sets, ["подход", "подхода", "подходов"]); 
       if (ex.done === 1) {
         exprogress = "Выполнен 1 подход из " + ex.sets;
       }
       if (ex.done > 1) {
-        exprogress = "Выполнено " + ex.done + " " + getPlural(ex.done, ["подход", "подхода", "подходов"]) + " из " + ex.sets;
+        exprogress = "Выполнено " + getPlural(ex.done, ["подход", "подхода", "подходов"]) + " из " + ex.sets;
       }
       let startbtn = "Начать упражнение"; 
       if (ex.done > 0 && ex.done < ex.sets - 1) {
