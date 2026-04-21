@@ -46,7 +46,8 @@
 
     .exercise-card {
       background: var(--card); border-radius: 16px; padding: 14px; margin-bottom: 12px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.08); position: relative; transition: opacity 0.2s;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08); position: relative;
+      transition: opacity 0.2s, visibility 0.2s;
     }
     .exercise-card.completed { background: var(--success); color: white; }
     
@@ -89,11 +90,11 @@
     .btn-add { background: var(--accent); color: white; }
     .btn-skip:active, .btn-add:active { opacity: 0.8; transform: scale(0.98); }
 
-    .drop-indicator { height: 4px; background: var(--accent); border-radius: 2px; margin: 2px 0; opacity: 0.8; transition: opacity 0.15s; }
+    .drop-indicator { height: 4px; background: var(--accent); border-radius: 2px; margin: 4px 0; opacity: 1; transition: margin 0.15s; }
     .dragging-clone {
       position: fixed; z-index: 9999; pointer-events: none; background: var(--card);
-      border-radius: 16px; padding: 14px; box-shadow: 0 8px 20px rgba(0,0,0,0.25);
-      transform-origin: center; transition: transform 0.1s;
+      border-radius: 16px; padding: 14px; box-shadow: 0 12px 24px rgba(0,0,0,0.2);
+      transform-origin: center;
     }
     @media (prefers-color-scheme: dark) {
       .dragging-clone { background: #1c1c1e; }
@@ -123,7 +124,7 @@
   </div>
 
 <script>
-  const STORAGE_KEY = 'workout_ios_v3';
+  const STORAGE_KEY = 'workout_ios_v4';
   const REST_MS = 120000;
   let state = { groups: {}, timerEnd: 0 };
   let currentGroup = null;
@@ -244,21 +245,23 @@
     drag.srcIndex = parseInt(card.dataset.index);
     drag.startY = e.touches[0].clientY;
 
-    // Визуальный клон
+    // 1. Полностью скрываем оригинал, сохраняя место в потоке
+    card.style.visibility = 'hidden';
+    card.style.pointerEvents = 'none';
+
+    // Создаём клон для перетаскивания
     const rect = card.getBoundingClientRect();
     drag.clone = card.cloneNode(true);
     drag.clone.className = 'dragging-clone';
     drag.clone.style.left = rect.left + 'px';
     drag.clone.style.top = rect.top + 'px';
     drag.clone.style.width = rect.width + 'px';
-    drag.clone.style.opacity = '0.95';
     document.body.appendChild(drag.clone);
 
     // Плейсхолдер
     drag.placeholder = document.createElement('div');
     drag.placeholder.className = 'drop-indicator';
-    card.parentNode.insertBefore(drag.placeholder, card.nextSibling);
-    card.style.opacity = '0.3';
+    card.parentNode.insertBefore(drag.placeholder, card);
 
     document.addEventListener('touchmove', onTouchMove, { passive: false });
     document.addEventListener('touchend', onTouchEnd);
@@ -268,14 +271,27 @@
     if (!drag.active) return;
     e.preventDefault();
     const y = e.touches[0].clientY;
-    const dy = y - drag.startY;
-    drag.clone.style.transform = `translateY(${dy}px) scale(1.02)`;
+    drag.clone.style.transform = `translateY(${y - drag.startY}px) scale(1.02)`;
 
-    const target = document.elementFromPoint(e.touches[0].clientX, y);
-    if (!target) return;
-    const card = target.closest('.exercise-card');
-    if (card && !card.classList.contains('drop-indicator')) {
-      card.parentNode.insertBefore(drag.placeholder, card);
+    const list = document.getElementById('exercise-list');
+    const cards = Array.from(list.querySelectorAll('.exercise-card'));
+    let inserted = false;
+
+    // Ищем первую карточку, чья середина находится ниже точки касания
+    for (const card of cards) {
+      if (card.style.visibility === 'hidden') continue; // Пропускаем скрытый оригинал
+      const rect = card.getBoundingClientRect();
+      const midY = rect.top + rect.height / 2;
+      if (y < midY) {
+        list.insertBefore(drag.placeholder, card);
+        inserted = true;
+        break;
+      }
+    }
+
+    // 2. Если ниже всех карточек — вставляем в самый конец
+    if (!inserted) {
+      list.appendChild(drag.placeholder);
     }
   }
 
@@ -288,6 +304,7 @@
     const children = Array.from(list.children);
     const phIndex = children.indexOf(drag.placeholder);
 
+    // Рассчитываем новый индекс в массиве
     let newIndex;
     if (drag.srcIndex < phIndex) newIndex = phIndex - 1;
     else newIndex = phIndex;
@@ -299,7 +316,7 @@
       saveState();
     }
 
-    // Очистка
+    // Очистка DOM и состояния
     drag.clone.remove();
     drag.placeholder.remove();
     drag.active = false;
