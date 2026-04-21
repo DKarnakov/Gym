@@ -217,19 +217,16 @@
       if (ex.done > 1) {
         exprogress = "Выполнено " + getPlural(ex.done, ["подход", "подхода", "подходов"]) + " из " + ex.sets;
       }
-      let startbtn = "Начать упражнение"; 
-      if (ex.done > 0 && ex.done < ex.sets - 1) {
-        startbtn = "Закончить" + (ex.done + 1) + "подход";
-      }
-      if (ex.done === ex.sets - 1) {
-        startbtn = "Закончить упражнение";
+      let finishbtn = "Закончить " + (ex.done + 1) + " подход";
+      if (ex.done + 1 === ex.sets) {
+        finishbtn = "Закончить упражнение";
       }
       card.innerHTML = `
         <div class="exercise-header"><div class="drag-handle">⠿</div>
           <div class="exercise-info"><div class="exercise-name">${ex.name}</div>
             <div class="exercise-meta">Вес: ${ex.weight} | ${exprogress}</div></div></div>
         <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
-        <button class="action-btn" ${ex.completed ? 'disabled' : ''} data-idx="${idx}">${ex.completed ? '✓ Выполнено' : startbtn}</button>
+        <button class="action-btn" ${ex.completed ? 'disabled' : ''} data-idx="${idx}">${ex.completed ? '✓ Выполнено' : finishbtn}</button>
       `;
       list.appendChild(card);
     });
