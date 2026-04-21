@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#000000">
+  <title>Тренировки</title>
+  <style>
+    :root {
+      --bg: #f2f2f7;
+      --card: #ffffff;
+      --text: #000000;
+      --text-secondary: #8e8e93;
+      --accent: #007aff;
+      --success: #34c759;
+      --danger: #ff3b30;
+      --timer-bg: rgba(0,0,0,0.85);
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #000000;
+        --card: #1c1c1e;
+        --text: #ffffff;
+      }
+    }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-touch-callout: none; }
+    body {
+      margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg); color: var(--text); padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+      touch-action: manipulation; min-height: 100vh;
+    }
+    .screen { display: none; padding: 16px; animation: fadeIn 0.2s ease; }
+    .screen.active { display: block; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+    
+    h1 { font-size: 28px; font-weight: 700; margin: 0 0 20px; }
+    .btn-group {
+      display: flex; flex-direction: column; gap: 10px;
+    }
+    .btn-group .btn {
+      display: flex; align-items: center; justify-content: space-between; width: 100%; padding: 18px 16px;
+      background: var(--card); border: none; border-radius: 14px; font-size: 17px; color: var(--text); font-weight: 500;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1); transition: transform 0.1s;
+    }
+    .btn-group .btn:active { transform: scale(0.98); }
+
+    .exercise-card {
+      background: var(--card); border-radius: 16px; padding: 14px; margin-bottom: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08); position: relative; transition: transform 0.2s, opacity 0.2s;
+      touch-action: none;
+    }
+    .exercise-card.completed { background: var(--success); color: white; }
+    .exercise-header { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+    .drag-handle { cursor: grab; padding: 6px 4px; font-size: 22px; color: var(--text-secondary); opacity: 0.7; }
+    .exercise-card.completed .drag-handle { color: rgba(255,255,255,0.7); }
+    .exercise-info { flex: 1; }
+    .exercise-name { font-weight: 600; font-size: 17px; }
+    .exercise-meta { font-size: 14px; color: var(--text-secondary); margin-top: 2px; }
+    .exercise-card.completed .exercise-meta { color: rgba(255,255,255,0.85); }
+    
+    .progress-bar { height: 6px; background: rgba(0,0,0,0.1); border-radius: 3px; overflow: hidden; margin: 8px 0; }
+    .progress-fill { height: 100%; background: var(--accent); transition: width 0.3s cubic-bezier(0.4,0,0.2,1); }
+    .exercise-card.completed .progress-fill { background: white; }
+
+    .action-btn {
+      width: 100%; padding: 13px; border: none; border-radius: 10px; font-size: 16px; font-weight: 600;
+      background: var(--accent); color: white; cursor: pointer; transition: opacity 0.2s;
+    }
+    .action-btn:active { opacity: 0.8; }
+    .action-btn:disabled { background: var(--text-secondary); cursor: default; }
+
+    .nav-btn { background: none; border: none; color: var(--accent); font-size: 17px; padding: 10px 0; cursor: pointer; margin-bottom: 10px; display: flex; align-items: center; gap: 4px; }
+    .nav-btn.reset { color: var(--text-secondary); margin-top: 30px; font-size: 15px; }
+
+    /* Timer Overlay */
+    #timer-overlay {
+      position: fixed; inset: 0; background: var(--timer-bg); display: none; flex-direction: column;
+      align-items: center; justify-content: center; z-index: 100; backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+    }
+    #timer-overlay.active { display: flex; }
+    .timer-display { font-size: 72px; font-weight: 700; color: white; margin-bottom: 40px; font-variant-numeric: tabular-nums; }
+    .timer-controls { display: flex; gap: 20px; width: 90%; max-width: 340px; }
+    .timer-btn {
+      flex: 1; padding: 16px; border: none; border-radius: 14px; font-size: 17px; font-weight: 600; cursor: pointer;
+    }
+    .btn-skip { background: var(--danger); color: white; }
+    .btn-add { background: var(--accent); color: white; }
+    .btn-skip:active, .btn-add:active { opacity: 0.8; transform: scale(0.98); }
+
+    .dragging { opacity: 0.4; transform: scale(0.96); }
+    .drop-indicator { height: 2px; background: var(--accent); margin: 2px 0; opacity: 0; transition: opacity 0.15s; border-radius: 2px; }
+    .drop-indicator.visible { opacity: 1; }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div id="group-screen" class="screen active">
+      <h1>Группа мышц</h1>
+      <div id="group-list" class="btn-group"></div>
+    </div>
+    <div id="workout-screen" class="screen">
+      <button class="nav-btn" onclick="showGroups()">← Назад</button>
+      <h1 id="group-title"></h1>
+      <div id="exercise-list"></div>
+      <button class="nav-btn reset" onclick="resetProgress()">🔄 Сбросить тренировку</button>
+    </div>
+  </div>
+
+  <div id="timer-overlay">
+    <div class="timer-display" id="timer-display">02:00</div>
+    <div class="timer-controls">
+      <button class="timer-btn btn-skip" onclick="skipTimer()">Пропустить</button>
+      <button class="timer-btn btn-add" onclick="addMinute()">+1 минута</button>
+    </div>
+  </div>
+
+<script>
+  const STORAGE_KEY = 'workout_ios_v2';
+  const REST_MS = 120000; // 2 минуты
+  let state = { groups: {}, timerEnd: 0 };
+  let currentGroup = null;
+  let timerInterval = null;
+  let dragState = { active: false, srcIndex: -1, el: null, placeholder: null };
+
+  // Исходные данные из файла
+  const rawData = {
+    "Грудь, Бицепс": [
+      { name: "Жим штанги лежа", sets: 4, weight: "40" },
+      { name: "Жим штанги узким хватом", sets: 4, weight: "35" },
+      { name: "Сгибание рук со штангой стоя", sets: 4, weight: "25" },
+      { name: "Жим гантелей полулежа", sets: 4, weight: "14х2" },
+      { name: "Молотки с разворотом", sets: 4, weight: "14" },
+      { name: "Косичка", sets: 4, weight: "30" },
+      { name: "Сгибание разгибание кистей", sets: 2, weight: "10" }
+    ],
+    "Спина": [
+      { name: "Гравитон", sets: 4, weight: "85" },
+      { name: "Тяга перекладины к груди", sets: 4, weight: "45" },
+      { name: "Тяга узким зватом к груди", sets: 4, weight: "40" },
+      { name: "Тяга к животу рукоятью", sets: 4, weight: "40" },
+      { name: "Тяга полуштанги на животе", sets: 4, weight: "10" },
+      { name: "Тяга гантели к животу", sets: 4, weight: "15" },
+      { name: "Незнайка", sets: 4, weight: "20х2" },
+      { name: "Наклоны с блинами", sets: 4, weight: "10" }
+    ],
+    "Плечи, Ноги": [
+      { name: "Жим гантелей сидя", sets: 4, weight: "14" },
+      { name: "Подъем гантелей в стороны на тренажере", sets: 4, weight: "30" },
+      { name: "Подъем гантелей стоя перед собой", sets: 4, weight: "12" },
+      { name: "Подъем гантелей лежа на животе в наклоне", sets: 4, weight: "12" },
+      { name: "Кузнечик", sets: 4, weight: "100" },
+      { name: "Разгибание ног на тренажере", sets: 4, weight: "50" },
+      { name: "Подъем на носки", sets: 4, weight: "50" }
+    ]
+  };
+
+  function loadState() {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (parsed.groups && parsed.timerEnd) return parsed;
+    }
+    // Инициализация при первом запуске
+    const init = { groups: {}, timerEnd: 0 };
+    for (const g in rawData) {
+      init.groups[g] = rawData[g].map(e => ({ ...e, done: 0, completed: false }));
+    }
+    return init;
+  }
+
+  function saveState() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+
+  function renderGroups() {
+    const list = document.getElementById('group-list');
+    list.innerHTML = '';
+    for (const name in state.groups) {
+      const btn = document.createElement('button');
+      btn.className = 'btn';
+      btn.textContent = name;
+      btn.onclick = () => selectGroup(name);
+      list.appendChild(btn);
+    }
+  }
+
+  function selectGroup(name) {
+    currentGroup = name;
+    document.getElementById('group-title').textContent = name;
+    document.getElementById('group-screen').classList.remove('active');
+    document.getElementById('workout-screen').classList.add('active');
+    renderExercises();
+  }
+
+  function showGroups() {
+    document.getElementById('workout-screen').classList.remove('active');
+    document.getElementById('group-screen').classList.add('active');
+    currentGroup = null;
+  }
+
+  function renderExercises() {
+    const list = document.getElementById('exercise-list');
+    list.innerHTML = '';
+    state.groups[currentGroup].forEach((ex, idx) => {
+      const card = document.createElement('div');
+      card.className = `exercise-card ${ex.completed ? 'completed' : ''}`;
+      card.dataset.index = idx;
+      const pct = Math.min(100, (ex.done / ex.sets) * 100);
+      card.innerHTML = `
+        <div class="exercise-header">
+          <div class="drag-handle">⠿</div>
+          <div class="exercise-info">
+            <div class="exercise-name">${ex.name}</div>
+            <div class="exercise-meta">Вес: ${ex.weight} | ${ex.done}/${ex.sets} подходов</div>
+          </div>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+        <button class="action-btn" ${ex.completed ? 'disabled' : ''} data-idx="${idx}">
+          ${ex.completed ? '✓ Выполнено' : 'Выполнить подход'}
+        </button>
+      `;
+      list.appendChild(card);
+    });
+    initDrag();
+  }
+
+  // Drag & Drop (Touch-optimized)
+  function initDrag() {
+    const handles = document.querySelectorAll('.drag-handle');
+    handles.forEach(h => {
+      h.addEventListener('touchstart', onTouchStart, { passive: false });
+    });
+  }
+
+  function onTouchStart(e) {
+    if (e.touches.length > 1) return;
+    e.preventDefault();
+    const handle = e.target.closest('.drag-handle');
+    const card = handle.closest('.exercise-card');
+    dragState.active = true;
+    dragState.srcIndex = parseInt(card.dataset.index);
+    dragState.el = card;
+    dragState.el.classList.add('dragging');
+
+    // Placeholder
+    dragState.placeholder = document.createElement('div');
+    dragState.placeholder.className = 'drop-indicator visible';
+    dragState.el.parentNode.insertBefore(dragState.placeholder, dragState.el);
+
+    document.addEventListener('touchmove', onTouchMove, { passive: false });
+    document.addEventListener('touchend', onTouchEnd);
+  }
+
+  function onTouchMove(e) {
+    if (!dragState.active) return;
+    e.preventDefault();
+    const y = e.touches[0].clientY;
+    const cards = document.querySelectorAll('.exercise-card:not(.dragging)');
+    let targetIndex = dragState.srcIndex;
+
+    for (let i = 0; i < cards.length; i++) {
+      const rect = cards[i].getBoundingClientRect();
+      const mid = rect.top + rect.height / 2;
+      if (y > rect.top && y < rect.bottom) {
+        targetIndex = parseInt(cards[i].dataset.index);
+        if (targetIndex !== dragState.srcIndex) {
+          dragState.el.parentNode.insertBefore(dragState.placeholder, cards[i]);
+        }
+        break;
+      }
+    }
+    // Update visual position of dragging element
+    dragState.el.style.transform = `translateY(${y - rect.top - rect.height/2}px)`;
+  }
+
+  function onTouchEnd() {
+    document.removeEventListener('touchmove', onTouchMove);
+    document.removeEventListener('touchend', onTouchEnd);
+    if (!dragState.active) return;
+
+    const finalY = dragState.placeholder.getBoundingClientRect().top;
+    dragState.el.style.transform = '';
+    dragState.el.classList.remove('dragging');
+    dragState.placeholder.remove();
+
+    const cards = Array.from(document.querySelectorAll('.exercise-card'));
+    const newIndex = cards.indexOf(dragState.el);
+    
+    if (newIndex !== -1 && newIndex !== dragState.srcIndex) {
+      const arr = state.groups[currentGroup];
+      const [moved] = arr.splice(dragState.srcIndex, 1);
+      arr.splice(newIndex, 0, moved);
+      saveState();
+      renderExercises();
+    }
+    dragState.active = false;
+    dragState.el = null;
+    dragState.placeholder = null;
+  }
+
+  // Button Click Handler (Event Delegation)
+  document.getElementById('exercise-list').addEventListener('click', e => {
+    const btn = e.target.closest('.action-btn');
+    if (!btn || btn.disabled) return;
+    const idx = parseInt(btn.dataset.idx);
+    const ex = state.groups[currentGroup][idx];
+    
+    ex.done++;
+    if (ex.done >= ex.sets) ex.completed = true;
+    saveState();
+    renderExercises();
+    startTimer();
+  });
+
+  // Timer Logic
+  function startTimer() {
+    state.timerEnd = Date.now() + REST_MS;
+    saveState();
+    document.getElementById('timer-overlay').classList.add('active');
+    clearInterval(timerInterval);
+    timerInterval = setInterval(updateTimerUI, 1000);
+    updateTimerUI();
+  }
+
+  function updateTimerUI() {
+    if (!state.timerEnd) return;
+    const remaining = Math.max(0, state.timerEnd - Date.now());
+    const m = Math.floor(remaining / 60000);
+    const s = Math.floor((remaining % 60000) / 1000);
+    document.getElementById('timer-display').textContent = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+    
+    if (remaining <= 0) {
+      stopTimer();
+      document.getElementById('timer-overlay').classList.remove('active');
+      if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+    }
+  }
+
+  function stopTimer() {
+    state.timerEnd = 0;
+    saveState();
+    clearInterval(timerInterval);
+  }
+
+  window.skipTimer = () => { stopTimer(); document.getElementById('timer-overlay').classList.remove('active'); };
+  window.addMinute = () => { state.timerEnd += 60000; saveState(); updateTimerUI(); };
+  window.resetProgress = () => {
+    if(confirm('Сбросить все выполненные подходы для этой группы?')) {
+      state.groups[currentGroup] = rawData[currentGroup].map(e => ({ ...e, done: 0, completed: false }));
+      saveState();
+      renderExercises();
+    }
+  };
+
+  // Restore timer on visibility change (iOS background/foreground)
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden && state.timerEnd > Date.now()) {
+      document.getElementById('timer-overlay').classList.add('active');
+      clearInterval(timerInterval);
+      timerInterval = setInterval(updateTimerUI, 1000);
+      updateTimerUI();
+    }
+  });
+
+  // Init
+  state = loadState();
+  renderGroups();
+</script>
+</body>
+</html>
