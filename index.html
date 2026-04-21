@@ -66,7 +66,7 @@
     
     #timer-rest-mode { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; padding: 20px; }
     .timer-display { font-size: 72px; font-weight: 700; color: white; margin-bottom: 20px; font-variant-numeric: tabular-nums; }
-    .next-exercise-info { text-align: center; margin-bottom: 24px; max-width: 80%; }
+    .next-exercise-info { text-align: center; margin-top: 24px; max-width: 80%; }
     .next-label { font-size: 14px; color: rgba(255,255,255,0.6); text-transform: uppercase; letter-spacing: 1.2px; margin-bottom: 6px; }
     .next-name { font-size: 22px; font-weight: 600; color: white; }
     .next-weight { font-size: 16px; color: rgba(255,255,255,0.85); margin-top: 4px; }
@@ -116,7 +116,7 @@
         <button class="timer-btn btn-skip" onclick="skipTimer()">Пропустить</button>
         <button class="timer-btn btn-add" onclick="addMinute()">+1 минута</button>
       </div>
-	  <div class="next-exercise-info" id="next-exercise-info" style="display:none;">
+	  <div class="next-exercise-info" id="next-exercise-info" style="display: none;">
         <div class="next-label">Следующее упражнение</div>
         <div class="next-name" id="next-ex-name"></div>
         <div class="next-weight" id="next-ex-weight"></div>
