@@ -6,24 +6,14 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="theme-color" content="#000000">
-  <title>Тренировки</title>
+  <title>💪</title>
   <style>
     :root {
-      --bg: #f2f2f7;
-      --card: #ffffff;
-      --text: #000000;
-      --text-secondary: #8e8e93;
-      --accent: #007aff;
-      --success: #34c759;
-      --danger: #ff3b30;
-      --timer-bg: rgba(0,0,0,0.85);
+      --bg: #f2f2f7; --card: #ffffff; --text: #000000; --text-secondary: #8e8e93;
+      --accent: #007aff; --success: #34c759; --danger: #ff3b30; --timer-bg: rgba(0,0,0,0.85);
     }
     @media (prefers-color-scheme: dark) {
-      :root {
-        --bg: #000000;
-        --card: #1c1c1e;
-        --text: #ffffff;
-      }
+      :root { --bg: #000000; --card: #1c1c1e; --text: #ffffff; }
     }
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-touch-callout: none; }
     body {
@@ -49,38 +39,37 @@
       box-shadow: 0 2px 8px rgba(0,0,0,0.08); position: relative;
     }
     .exercise-card.completed { background: var(--success); color: white; }
-    
     .exercise-header { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
-    .drag-handle { 
-      cursor: grab; padding: 10px 6px; font-size: 24px; color: var(--text-secondary); 
-      touch-action: none; flex-shrink: 0;
-    }
+    .drag-handle { cursor: grab; padding: 10px 6px; font-size: 24px; color: var(--text-secondary); touch-action: none; flex-shrink: 0; }
     .exercise-card.completed .drag-handle { color: rgba(255,255,255,0.7); }
     .exercise-info { flex: 1; }
     .exercise-name { font-weight: 600; font-size: 17px; }
     .exercise-meta { font-size: 14px; color: var(--text-secondary); margin-top: 2px; }
     .exercise-card.completed .exercise-meta { color: rgba(255,255,255,0.85); }
-    
     .progress-bar { height: 6px; background: rgba(0,0,0,0.1); border-radius: 3px; overflow: hidden; margin: 8px 0; }
     .progress-fill { height: 100%; background: var(--accent); transition: width 0.3s cubic-bezier(0.4,0,0.2,1); }
     .exercise-card.completed .progress-fill { background: white; }
-
     .action-btn {
       width: 100%; padding: 13px; border: none; border-radius: 10px; font-size: 16px; font-weight: 600;
       background: var(--accent); color: white; cursor: pointer; transition: opacity 0.2s;
     }
     .action-btn:active { opacity: 0.8; }
     .action-btn:disabled { background: var(--text-secondary); cursor: default; }
-
     .nav-btn { background: none; border: none; color: var(--accent); font-size: 17px; padding: 10px 0; cursor: pointer; margin-bottom: 10px; display: flex; align-items: center; gap: 4px; }
     .nav-btn.reset { color: var(--text-secondary); margin-top: 30px; font-size: 15px; }
 
     #timer-overlay {
-      position: fixed; inset: 0; background: var(--timer-bg); display: none; flex-direction: column;
-      align-items: center; justify-content: center; z-index: 100; backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+      position: fixed; inset: 0; background: var(--timer-bg); display: none; align-items: center; justify-content: center;
+      z-index: 100; backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
     }
     #timer-overlay.active { display: flex; }
-    .timer-display { font-size: 72px; font-weight: 700; color: white; margin-bottom: 40px; font-variant-numeric: tabular-nums; }
+    
+    #timer-rest-mode { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; padding: 20px; }
+    .timer-display { font-size: 72px; font-weight: 700; color: white; margin-bottom: 20px; font-variant-numeric: tabular-nums; }
+    .next-exercise-info { text-align: center; margin-bottom: 24px; max-width: 80%; }
+    .next-label { font-size: 14px; color: rgba(255,255,255,0.6); text-transform: uppercase; letter-spacing: 1.2px; margin-bottom: 6px; }
+    .next-name { font-size: 22px; font-weight: 600; color: white; }
+    .next-weight { font-size: 16px; color: rgba(255,255,255,0.85); margin-top: 4px; }
     .timer-controls { display: flex; gap: 20px; width: 90%; max-width: 340px; }
     .timer-btn {
       flex: 1; padding: 16px; border: none; border-radius: 14px; font-size: 17px; font-weight: 600; cursor: pointer;
@@ -89,15 +78,21 @@
     .btn-add { background: var(--accent); color: white; }
     .btn-skip:active, .btn-add:active { opacity: 0.8; transform: scale(0.98); }
 
+    #timer-complete-mode { display: none; flex-direction: column; align-items: center; justify-content: center; text-align: center; width: 90%; max-width: 320px; padding: 20px; }
+    #timer-complete-mode .trophy { font-size: 64px; margin-bottom: 16px; }
+    #timer-complete-mode h2 { color: white; font-size: 24px; margin: 0 0 8px; }
+    #timer-complete-mode p { color: rgba(255,255,255,0.7); font-size: 16px; margin: 0 0 24px; }
+    #timer-complete-mode .timer-btn { width: 100%; margin-bottom: 10px; }
+    #timer-complete-mode .btn-secondary { background: rgba(255,255,255,0.15); color: white; }
+
     .drop-indicator { height: 4px; background: var(--accent); border-radius: 2px; margin: 4px 0; opacity: 1; transition: margin 0.15s; }
     .dragging-clone {
       position: fixed; z-index: 9999; pointer-events: none; background: var(--card);
       border-radius: 16px; padding: 14px; box-shadow: 0 12px 24px rgba(0,0,0,0.2);
       transform-origin: center;
     }
-    @media (prefers-color-scheme: dark) {
-      .dragging-clone { background: #1c1c1e; }
-    }
+    @media (prefers-color-scheme: dark) { .dragging-clone { background: #1c1c1e; } }
+    .loading { text-align: center; padding: 40px; color: var(--text-secondary); }
   </style>
 </head>
 <body>
@@ -115,60 +110,57 @@
   </div>
 
   <div id="timer-overlay">
-    <div class="timer-display" id="timer-display">02:00</div>
-    <div class="timer-controls">
-      <button class="timer-btn btn-skip" onclick="skipTimer()">Пропустить</button>
-      <button class="timer-btn btn-add" onclick="addMinute()">+1 минута</button>
+    <div id="timer-rest-mode">
+      <div class="timer-display" id="timer-display">02:00</div>
+      <div class="next-exercise-info" id="next-exercise-info" style="display:none;">
+        <div class="next-label">Следующее упражнение</div>
+        <div class="next-name" id="next-ex-name"></div>
+        <div class="next-weight" id="next-ex-weight"></div>
+      </div>
+      <div class="timer-controls">
+        <button class="timer-btn btn-skip" onclick="skipTimer()">Пропустить</button>
+        <button class="timer-btn btn-add" onclick="addMinute()">+1 минута</button>
+      </div>
+    </div>
+    <div id="timer-complete-mode">
+      <div class="trophy">🏆</div>
+      <h2>Тренировка завершена!</h2>
+      <p>Все упражнения выполнены. Отличная работа!</p>
+      <button class="timer-btn btn-add" onclick="resetProgress()">Начать заново</button>
+      <button class="timer-btn btn-secondary" onclick="skipTimer()">Закрыть</button>
     </div>
   </div>
 
 <script>
-  const STORAGE_KEY = 'workout_ios_v6';
+  const STORAGE_KEY = 'workout_ios_v9';
   const REST_MS = 120000;
-  let state = { groups: {}, timerEnd: 0 };
+  let state = { groups: {}, timerEnd: 0, timerNextEx: null };
   let currentGroup = null;
   let timerInterval = null;
   let drag = { active: false, srcIndex: -1, clone: null, placeholder: null, startY: 0 };
+  let defaultData = null;
 
-  const rawData = {
-    "Грудь, Бицепс": [
-      { name: "Жим штанги лежа", sets: 4, weight: "40" },
-      { name: "Жим штанги узким хватом", sets: 4, weight: "35" },
-      { name: "Сгибание рук со штангой стоя", sets: 4, weight: "25" },
-      { name: "Жим гантелей полулежа", sets: 4, weight: "14х2" },
-      { name: "Молотки с разворотом", sets: 4, weight: "14" },
-      { name: "Косичка", sets: 4, weight: "30" },
-      { name: "Сгибание разгибание кистей", sets: 2, weight: "10" }
-    ],
-    "Спина": [
-      { name: "Гравитон", sets: 4, weight: "85" },
-      { name: "Тяга перекладины к груди", sets: 4, weight: "45" },
-      { name: "Тяга узким зватом к груди", sets: 4, weight: "40" },
-      { name: "Тяга к животу рукоятью", sets: 4, weight: "40" },
-      { name: "Тяга полуштанги на животе", sets: 4, weight: "10" },
-      { name: "Тяга гантели к животу", sets: 4, weight: "15" },
-      { name: "Незнайка", sets: 4, weight: "20х2" },
-      { name: "Наклоны с блинами", sets: 4, weight: "10" }
-    ],
-    "Плечи, Ноги": [
-      { name: "Жим гантелей сидя", sets: 4, weight: "14" },
-      { name: "Подъем гантелей в стороны на тренажере", sets: 4, weight: "30" },
-      { name: "Подъем гантелей стоя перед собой", sets: 4, weight: "12" },
-      { name: "Подъем гантелей лежа на животе в наклоне", sets: 4, weight: "12" },
-      { name: "Кузнечик", sets: 4, weight: "100" },
-      { name: "Разгибание ног на тренажере", sets: 4, weight: "50" },
-      { name: "Подъем на носки", sets: 4, weight: "50" }
-    ]
-  };
+  async function loadDefaultData() {
+    try {
+      const res = await fetch('data.json');
+      if (!res.ok) throw new Error('Network error');
+      defaultData = await res.json();
+    } catch (e) {
+      console.error('Не удалось загрузить data.json. Запустите через локальный сервер или проверьте путь.', e);
+      document.getElementById('group-list').innerHTML = '<div class="loading">Ошибка загрузки данных. Проверьте консоль.</div>';
+    }
+  }
 
   function loadState() {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
       try { return JSON.parse(saved); } catch(e) {}
     }
-    const init = { groups: {}, timerEnd: 0 };
-    for (const g in rawData) {
-      init.groups[g] = rawData[g].map(e => ({ ...e, done: 0, completed: false }));
+    const init = { groups: {}, timerEnd: 0, timerNextEx: null };
+    if (defaultData) {
+      for (const g in defaultData) {
+        init.groups[g] = defaultData[g].map(e => ({ ...e, done: 0, completed: false }));
+      }
     }
     return init;
   }
@@ -180,8 +172,7 @@
     list.innerHTML = '';
     for (const name in state.groups) {
       const btn = document.createElement('button');
-      btn.className = 'btn';
-      btn.textContent = name;
+      btn.className = 'btn'; btn.textContent = name;
       btn.onclick = () => selectGroup(name);
       list.appendChild(btn);
     }
@@ -210,17 +201,11 @@
       card.dataset.index = idx;
       const pct = Math.min(100, (ex.done / ex.sets) * 100);
       card.innerHTML = `
-        <div class="exercise-header">
-          <div class="drag-handle">⠿</div>
-          <div class="exercise-info">
-            <div class="exercise-name">${ex.name}</div>
-            <div class="exercise-meta">Вес: ${ex.weight} | ${ex.done}/${ex.sets}</div>
-          </div>
-        </div>
+        <div class="exercise-header"><div class="drag-handle">⠿</div>
+          <div class="exercise-info"><div class="exercise-name">${ex.name}</div>
+            <div class="exercise-meta">Вес: ${ex.weight} | ${ex.done}/${ex.sets}</div></div></div>
         <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
-        <button class="action-btn" ${ex.completed ? 'disabled' : ''} data-idx="${idx}">
-          ${ex.completed ? '✓ Выполнено' : 'Выполнить подход'}
-        </button>
+        <button class="action-btn" ${ex.completed ? 'disabled' : ''} data-idx="${idx}">${ex.completed ? '✓ Выполнено' : 'Выполнить подход'}</button>
       `;
       list.appendChild(card);
     });
@@ -228,106 +213,61 @@
   }
 
   function initDrag() {
-    document.querySelectorAll('.drag-handle').forEach(h => {
-      h.addEventListener('touchstart', onTouchStart, { passive: false });
-    });
+    document.querySelectorAll('.drag-handle').forEach(h => h.addEventListener('touchstart', onTouchStart, { passive: false }));
   }
 
   function onTouchStart(e) {
-    if (e.touches.length > 1) return;
-    e.preventDefault();
-    const handle = e.target.closest('.drag-handle');
-    const card = handle.closest('.exercise-card');
-    
-    drag.active = true;
-    drag.srcIndex = parseInt(card.dataset.index);
-    drag.startY = e.touches[0].clientY;
-
-    // 1. Получаем координаты ДО скрытия карточки
+    if (e.touches.length > 1) return; e.preventDefault();
+    const handle = e.target.closest('.drag-handle'); const card = handle.closest('.exercise-card');
+    drag.active = true; drag.srcIndex = parseInt(card.dataset.index); drag.startY = e.touches[0].clientY;
     const rect = card.getBoundingClientRect();
-
-    // 2. Создаем и добавляем клон в body
-    drag.clone = card.cloneNode(true);
-    drag.clone.className = 'dragging-clone';
-    drag.clone.style.left = rect.left + 'px';
-    drag.clone.style.top = rect.top + 'px';
-    drag.clone.style.width = rect.width + 'px';
-    drag.clone.style.opacity = '0.7'; // Прозрачность клона
+    drag.clone = card.cloneNode(true); drag.clone.className = 'dragging-clone';
+    drag.clone.style.left = rect.left + 'px'; drag.clone.style.top = rect.top + 'px';
+    drag.clone.style.width = rect.width + 'px'; drag.clone.style.opacity = '0.7';
     document.body.appendChild(drag.clone);
-
-    // 3. Скрываем оригинальную карточку (display: none)
-    card.style.display = 'none';
-    card.style.pointerEvents = 'none';
-
-    // 4. Создаем плейсхолдер и вставляем на место карточки
-    drag.placeholder = document.createElement('div');
-    drag.placeholder.className = 'drop-indicator';
+    card.style.display = 'none'; card.style.pointerEvents = 'none';
+    drag.placeholder = document.createElement('div'); drag.placeholder.className = 'drop-indicator';
     card.parentNode.insertBefore(drag.placeholder, card);
-
     document.addEventListener('touchmove', onTouchMove, { passive: false });
     document.addEventListener('touchend', onTouchEnd);
   }
 
   function onTouchMove(e) {
-    if (!drag.active) return;
-    e.preventDefault();
+    if (!drag.active) return; e.preventDefault();
     const y = e.touches[0].clientY;
     drag.clone.style.transform = `translateY(${y - drag.startY}px) scale(1.02)`;
-
     const list = document.getElementById('exercise-list');
     const cards = Array.from(list.querySelectorAll('.exercise-card'));
     let inserted = false;
-
-    // Ищем первую карточку, чья середина выше точки касания
     for (const card of cards) {
-      // Важно: пропускаем скрытую карточку по ID, 
-      // так как у display:none размеры могут быть нулевыми
       if (parseInt(card.dataset.index) === drag.srcIndex) continue;
-      
       const rect = card.getBoundingClientRect();
-      const midY = rect.top + rect.height / 2;
-      if (y < midY) {
-        list.insertBefore(drag.placeholder, card);
-        inserted = true;
-        break;
-      }
+      if (y < rect.top + rect.height / 2) { list.insertBefore(drag.placeholder, card); inserted = true; break; }
     }
-
-    // Если ниже всех карточек — вставляем в самый конец
-    if (!inserted) {
-      list.appendChild(drag.placeholder);
-    }
+    if (!inserted) list.appendChild(drag.placeholder);
   }
 
   function onTouchEnd() {
-    document.removeEventListener('touchmove', onTouchMove);
-    document.removeEventListener('touchend', onTouchEnd);
+    document.removeEventListener('touchmove', onTouchMove); document.removeEventListener('touchend', onTouchEnd);
     if (!drag.active) return;
-
     const list = document.getElementById('exercise-list');
     const children = Array.from(list.children);
     const phIndex = children.indexOf(drag.placeholder);
-
-    let newIndex;
-    if (drag.srcIndex < phIndex) newIndex = phIndex - 1;
-    else newIndex = phIndex;
-
+    let newIndex = drag.srcIndex < phIndex ? phIndex - 1 : phIndex;
     if (newIndex >= 0 && newIndex !== drag.srcIndex) {
-      const arr = state.groups[currentGroup];
-      const [moved] = arr.splice(drag.srcIndex, 1);
-      arr.splice(newIndex, 0, moved);
+      const arr = state.groups[currentGroup]; const [moved] = arr.splice(drag.srcIndex, 1); arr.splice(newIndex, 0, moved);
       saveState();
     }
-
-    // Очистка
-    drag.clone.remove();
-    drag.placeholder.remove();
-    drag.active = false;
-    drag.srcIndex = -1;
-    drag.clone = null;
-    drag.placeholder = null;
-
+    drag.clone.remove(); drag.placeholder.remove();
+    drag.active = false; drag.srcIndex = -1; drag.clone = null; drag.placeholder = null;
     renderExercises();
+  }
+
+  function findNextExercise(idx, exercises) {
+    const n = exercises.length;
+    for (let i = idx + 1; i < n; i++) if (!exercises[i].completed) return exercises[i];
+    for (let i = 0; i <= idx; i++) if (!exercises[i].completed) return exercises[i];
+    return null;
   }
 
   document.getElementById('exercise-list').addEventListener('click', e => {
@@ -335,64 +275,82 @@
     if (!btn || btn.disabled) return;
     const idx = parseInt(btn.dataset.idx);
     const ex = state.groups[currentGroup][idx];
-    
     ex.done++;
-    if (ex.done >= ex.sets) ex.completed = true;
-    saveState();
-    renderExercises();
-    startTimer();
+    let nextExInfo = null, isComplete = false;
+    if (ex.done >= ex.sets) {
+      ex.completed = true;
+      const next = findNextExercise(idx, state.groups[currentGroup]);
+      if (!next) isComplete = true;
+      else nextExInfo = { name: next.name, weight: next.weight };
+    }
+    saveState(); renderExercises();
+    startTimer(nextExInfo, isComplete);
   });
 
-  function startTimer() {
+  function startTimer(nextExercise = null, isComplete = false) {
+    const restMode = document.getElementById('timer-rest-mode');
+    const completeMode = document.getElementById('timer-complete-mode');
+    clearInterval(timerInterval);
+
+    if (isComplete) {
+      state.timerNextEx = { complete: true }; state.timerEnd = 0; saveState();
+      restMode.style.display = 'none'; completeMode.style.display = 'flex';
+      document.getElementById('timer-overlay').classList.add('active');
+      return;
+    }
+
+    completeMode.style.display = 'none'; restMode.style.display = 'flex';
+    const infoEl = document.getElementById('next-exercise-info');
+    if (nextExercise) {
+      document.getElementById('next-ex-name').textContent = nextExercise.name;
+      document.getElementById('next-ex-weight').textContent = `Вес: ${nextExercise.weight}`;
+      infoEl.style.display = 'block';
+    } else { infoEl.style.display = 'none'; }
+
     state.timerEnd = Date.now() + REST_MS;
+    state.timerNextEx = nextExercise ? { name: nextExercise.name, weight: nextExercise.weight } : null;
     saveState();
     document.getElementById('timer-overlay').classList.add('active');
-    clearInterval(timerInterval);
-    timerInterval = setInterval(updateTimerUI, 1000);
-    updateTimerUI();
+    timerInterval = setInterval(updateTimerUI, 1000); updateTimerUI();
   }
 
   function updateTimerUI() {
     if (!state.timerEnd) return;
     const remaining = Math.max(0, state.timerEnd - Date.now());
-    const m = Math.floor(remaining / 60000);
-    const s = Math.floor((remaining % 60000) / 1000);
+    const m = Math.floor(remaining / 60000); const s = Math.floor((remaining % 60000) / 1000);
     document.getElementById('timer-display').textContent = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
-    
     if (remaining <= 0) {
-      stopTimer();
-      document.getElementById('timer-overlay').classList.remove('active');
+      stopTimer(); document.getElementById('timer-overlay').classList.remove('active');
       if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
     }
   }
 
   function stopTimer() {
-    state.timerEnd = 0;
-    saveState();
-    clearInterval(timerInterval);
+    state.timerEnd = 0; state.timerNextEx = null; saveState(); clearInterval(timerInterval);
   }
 
   window.skipTimer = () => { stopTimer(); document.getElementById('timer-overlay').classList.remove('active'); };
   window.addMinute = () => { state.timerEnd += 60000; saveState(); updateTimerUI(); };
+  
   window.resetProgress = () => {
     if(confirm('Сбросить прогресс для этой группы?')) {
-      state.groups[currentGroup] = rawData[currentGroup].map(e => ({ ...e, done: 0, completed: false }));
-      saveState();
-      renderExercises();
+      state.groups[currentGroup] = defaultData[currentGroup].map(e => ({ ...e, done: 0, completed: false }));
+      stopTimer(); saveState(); renderExercises();
     }
   };
 
   document.addEventListener('visibilitychange', () => {
-    if (!document.hidden && state.timerEnd > Date.now()) {
-      document.getElementById('timer-overlay').classList.add('active');
-      clearInterval(timerInterval);
-      timerInterval = setInterval(updateTimerUI, 1000);
-      updateTimerUI();
+    if (!document.hidden && state.timerEnd > 0) {
+      if (state.timerNextEx && state.timerNextEx.complete) startTimer(null, true);
+      else if (state.timerEnd > Date.now()) startTimer(state.timerNextEx, false);
     }
   });
 
-  state = loadState();
-  renderGroups();
+  // Инициализация приложения
+  loadDefaultData().then(() => {
+    state = loadState();
+    renderGroups();
+  });
 </script>
 </body>
 </html>
