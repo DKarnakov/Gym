@@ -47,7 +47,6 @@
     .exercise-card {
       background: var(--card); border-radius: 16px; padding: 14px; margin-bottom: 12px;
       box-shadow: 0 2px 8px rgba(0,0,0,0.08); position: relative;
-      transition: opacity 0.2s, visibility 0.2s;
     }
     .exercise-card.completed { background: var(--success); color: white; }
     
@@ -124,7 +123,7 @@
   </div>
 
 <script>
-  const STORAGE_KEY = 'workout_ios_v4';
+  const STORAGE_KEY = 'workout_ios_v6';
   const REST_MS = 120000;
   let state = { groups: {}, timerEnd: 0 };
   let currentGroup = null;
@@ -228,7 +227,6 @@
     initDrag();
   }
 
-  // ✅ ИСПРАВЛЕННЫЙ DRAG & DROP
   function initDrag() {
     document.querySelectorAll('.drag-handle').forEach(h => {
       h.addEventListener('touchstart', onTouchStart, { passive: false });
@@ -245,20 +243,23 @@
     drag.srcIndex = parseInt(card.dataset.index);
     drag.startY = e.touches[0].clientY;
 
-    // 1. Полностью скрываем оригинал, сохраняя место в потоке
-    card.style.visibility = 'hidden';
-    card.style.pointerEvents = 'none';
-
-    // Создаём клон для перетаскивания
+    // 1. Получаем координаты ДО скрытия карточки
     const rect = card.getBoundingClientRect();
+
+    // 2. Создаем и добавляем клон в body
     drag.clone = card.cloneNode(true);
     drag.clone.className = 'dragging-clone';
     drag.clone.style.left = rect.left + 'px';
     drag.clone.style.top = rect.top + 'px';
     drag.clone.style.width = rect.width + 'px';
+    drag.clone.style.opacity = '0.7'; // Прозрачность клона
     document.body.appendChild(drag.clone);
 
-    // Плейсхолдер
+    // 3. Скрываем оригинальную карточку (display: none)
+    card.style.display = 'none';
+    card.style.pointerEvents = 'none';
+
+    // 4. Создаем плейсхолдер и вставляем на место карточки
     drag.placeholder = document.createElement('div');
     drag.placeholder.className = 'drop-indicator';
     card.parentNode.insertBefore(drag.placeholder, card);
@@ -277,9 +278,12 @@
     const cards = Array.from(list.querySelectorAll('.exercise-card'));
     let inserted = false;
 
-    // Ищем первую карточку, чья середина находится ниже точки касания
+    // Ищем первую карточку, чья середина выше точки касания
     for (const card of cards) {
-      if (card.style.visibility === 'hidden') continue; // Пропускаем скрытый оригинал
+      // Важно: пропускаем скрытую карточку по ID, 
+      // так как у display:none размеры могут быть нулевыми
+      if (parseInt(card.dataset.index) === drag.srcIndex) continue;
+      
       const rect = card.getBoundingClientRect();
       const midY = rect.top + rect.height / 2;
       if (y < midY) {
@@ -289,7 +293,7 @@
       }
     }
 
-    // 2. Если ниже всех карточек — вставляем в самый конец
+    // Если ниже всех карточек — вставляем в самый конец
     if (!inserted) {
       list.appendChild(drag.placeholder);
     }
@@ -304,7 +308,6 @@
     const children = Array.from(list.children);
     const phIndex = children.indexOf(drag.placeholder);
 
-    // Рассчитываем новый индекс в массиве
     let newIndex;
     if (drag.srcIndex < phIndex) newIndex = phIndex - 1;
     else newIndex = phIndex;
@@ -316,7 +319,7 @@
       saveState();
     }
 
-    // Очистка DOM и состояния
+    // Очистка
     drag.clone.remove();
     drag.placeholder.remove();
     drag.active = false;
@@ -327,7 +330,6 @@
     renderExercises();
   }
 
-  // Клик по кнопке подхода
   document.getElementById('exercise-list').addEventListener('click', e => {
     const btn = e.target.closest('.action-btn');
     if (!btn || btn.disabled) return;
