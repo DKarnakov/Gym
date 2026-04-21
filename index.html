@@ -98,7 +98,7 @@
 <body>
   <div id="app">
     <div id="group-screen" class="screen active">
-      <h1>Группа мышц</h1>
+      <h1>Тренировка</h1>
       <div id="group-list" class="btn-group"></div>
     </div>
     <div id="workout-screen" class="screen">
@@ -112,21 +112,21 @@
   <div id="timer-overlay">
     <div id="timer-rest-mode">
       <div class="timer-display" id="timer-display">02:00</div>
-      <div class="next-exercise-info" id="next-exercise-info" style="display:none;">
-        <div class="next-label">Следующее упражнение</div>
-        <div class="next-name" id="next-ex-name"></div>
-        <div class="next-weight" id="next-ex-weight"></div>
-      </div>
       <div class="timer-controls">
         <button class="timer-btn btn-skip" onclick="skipTimer()">Пропустить</button>
         <button class="timer-btn btn-add" onclick="addMinute()">+1 минута</button>
+      </div>
+	  <div class="next-exercise-info" id="next-exercise-info" style="display:none;">
+        <div class="next-label">Следующее упражнение</div>
+        <div class="next-name" id="next-ex-name"></div>
+        <div class="next-weight" id="next-ex-weight"></div>
       </div>
     </div>
     <div id="timer-complete-mode">
       <div class="trophy">🏆</div>
       <h2>Тренировка завершена!</h2>
       <p>Все упражнения выполнены. Отличная работа!</p>
-      <button class="timer-btn btn-add" onclick="resetProgress()">Начать заново</button>
+      <button class="timer-btn btn-add" onclick="resetProgress()">Сбросить прогресс</button>
       <button class="timer-btn btn-secondary" onclick="skipTimer()">Закрыть</button>
     </div>
   </div>
