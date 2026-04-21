@@ -219,7 +219,7 @@
       }
       let startbtn = "Начать упражнение"; 
       if (ex.done > 0 && ex.done < ex.sets - 1) {
-        startbtn = "Закончить подход";
+        startbtn = "Закончить" + (ex.done + 1) + "подход";
       }
       if (ex.done === ex.sets - 1) {
         startbtn = "Закончить упражнение";
