@@ -36,9 +36,7 @@
     @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
     
     h1 { font-size: 28px; font-weight: 700; margin: 0 0 20px; }
-    .btn-group {
-      display: flex; flex-direction: column; gap: 10px;
-    }
+    .btn-group { display: flex; flex-direction: column; gap: 10px; }
     .btn-group .btn {
       display: flex; align-items: center; justify-content: space-between; width: 100%; padding: 18px 16px;
       background: var(--card); border: none; border-radius: 14px; font-size: 17px; color: var(--text); font-weight: 500;
@@ -48,12 +46,15 @@
 
     .exercise-card {
       background: var(--card); border-radius: 16px; padding: 14px; margin-bottom: 12px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.08); position: relative; transition: transform 0.2s, opacity 0.2s;
-      touch-action: none;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08); position: relative; transition: opacity 0.2s;
     }
     .exercise-card.completed { background: var(--success); color: white; }
+    
     .exercise-header { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
-    .drag-handle { cursor: grab; padding: 6px 4px; font-size: 22px; color: var(--text-secondary); opacity: 0.7; }
+    .drag-handle { 
+      cursor: grab; padding: 10px 6px; font-size: 24px; color: var(--text-secondary); 
+      touch-action: none; flex-shrink: 0;
+    }
     .exercise-card.completed .drag-handle { color: rgba(255,255,255,0.7); }
     .exercise-info { flex: 1; }
     .exercise-name { font-weight: 600; font-size: 17px; }
@@ -74,7 +75,6 @@
     .nav-btn { background: none; border: none; color: var(--accent); font-size: 17px; padding: 10px 0; cursor: pointer; margin-bottom: 10px; display: flex; align-items: center; gap: 4px; }
     .nav-btn.reset { color: var(--text-secondary); margin-top: 30px; font-size: 15px; }
 
-    /* Timer Overlay */
     #timer-overlay {
       position: fixed; inset: 0; background: var(--timer-bg); display: none; flex-direction: column;
       align-items: center; justify-content: center; z-index: 100; backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
@@ -89,9 +89,15 @@
     .btn-add { background: var(--accent); color: white; }
     .btn-skip:active, .btn-add:active { opacity: 0.8; transform: scale(0.98); }
 
-    .dragging { opacity: 0.4; transform: scale(0.96); }
-    .drop-indicator { height: 2px; background: var(--accent); margin: 2px 0; opacity: 0; transition: opacity 0.15s; border-radius: 2px; }
-    .drop-indicator.visible { opacity: 1; }
+    .drop-indicator { height: 4px; background: var(--accent); border-radius: 2px; margin: 2px 0; opacity: 0.8; transition: opacity 0.15s; }
+    .dragging-clone {
+      position: fixed; z-index: 9999; pointer-events: none; background: var(--card);
+      border-radius: 16px; padding: 14px; box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+      transform-origin: center; transition: transform 0.1s;
+    }
+    @media (prefers-color-scheme: dark) {
+      .dragging-clone { background: #1c1c1e; }
+    }
   </style>
 </head>
 <body>
@@ -117,14 +123,13 @@
   </div>
 
 <script>
-  const STORAGE_KEY = 'workout_ios_v2';
-  const REST_MS = 120000; // 2 минуты
+  const STORAGE_KEY = 'workout_ios_v3';
+  const REST_MS = 120000;
   let state = { groups: {}, timerEnd: 0 };
   let currentGroup = null;
   let timerInterval = null;
-  let dragState = { active: false, srcIndex: -1, el: null, placeholder: null };
+  let drag = { active: false, srcIndex: -1, clone: null, placeholder: null, startY: 0 };
 
-  // Исходные данные из файла
   const rawData = {
     "Грудь, Бицепс": [
       { name: "Жим штанги лежа", sets: 4, weight: "40" },
@@ -159,10 +164,8 @@
   function loadState() {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
-      const parsed = JSON.parse(saved);
-      if (parsed.groups && parsed.timerEnd) return parsed;
+      try { return JSON.parse(saved); } catch(e) {}
     }
-    // Инициализация при первом запуске
     const init = { groups: {}, timerEnd: 0 };
     for (const g in rawData) {
       init.groups[g] = rawData[g].map(e => ({ ...e, done: 0, completed: false }));
@@ -211,7 +214,7 @@
           <div class="drag-handle">⠿</div>
           <div class="exercise-info">
             <div class="exercise-name">${ex.name}</div>
-            <div class="exercise-meta">Вес: ${ex.weight} | ${ex.done}/${ex.sets} подходов</div>
+            <div class="exercise-meta">Вес: ${ex.weight} | ${ex.done}/${ex.sets}</div>
           </div>
         </div>
         <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
@@ -224,10 +227,9 @@
     initDrag();
   }
 
-  // Drag & Drop (Touch-optimized)
+  // ✅ ИСПРАВЛЕННЫЙ DRAG & DROP
   function initDrag() {
-    const handles = document.querySelectorAll('.drag-handle');
-    handles.forEach(h => {
+    document.querySelectorAll('.drag-handle').forEach(h => {
       h.addEventListener('touchstart', onTouchStart, { passive: false });
     });
   }
@@ -237,68 +239,78 @@
     e.preventDefault();
     const handle = e.target.closest('.drag-handle');
     const card = handle.closest('.exercise-card');
-    dragState.active = true;
-    dragState.srcIndex = parseInt(card.dataset.index);
-    dragState.el = card;
-    dragState.el.classList.add('dragging');
+    
+    drag.active = true;
+    drag.srcIndex = parseInt(card.dataset.index);
+    drag.startY = e.touches[0].clientY;
 
-    // Placeholder
-    dragState.placeholder = document.createElement('div');
-    dragState.placeholder.className = 'drop-indicator visible';
-    dragState.el.parentNode.insertBefore(dragState.placeholder, dragState.el);
+    // Визуальный клон
+    const rect = card.getBoundingClientRect();
+    drag.clone = card.cloneNode(true);
+    drag.clone.className = 'dragging-clone';
+    drag.clone.style.left = rect.left + 'px';
+    drag.clone.style.top = rect.top + 'px';
+    drag.clone.style.width = rect.width + 'px';
+    drag.clone.style.opacity = '0.95';
+    document.body.appendChild(drag.clone);
+
+    // Плейсхолдер
+    drag.placeholder = document.createElement('div');
+    drag.placeholder.className = 'drop-indicator';
+    card.parentNode.insertBefore(drag.placeholder, card.nextSibling);
+    card.style.opacity = '0.3';
 
     document.addEventListener('touchmove', onTouchMove, { passive: false });
     document.addEventListener('touchend', onTouchEnd);
   }
 
   function onTouchMove(e) {
-    if (!dragState.active) return;
+    if (!drag.active) return;
     e.preventDefault();
     const y = e.touches[0].clientY;
-    const cards = document.querySelectorAll('.exercise-card:not(.dragging)');
-    let targetIndex = dragState.srcIndex;
+    const dy = y - drag.startY;
+    drag.clone.style.transform = `translateY(${dy}px) scale(1.02)`;
 
-    for (let i = 0; i < cards.length; i++) {
-      const rect = cards[i].getBoundingClientRect();
-      const mid = rect.top + rect.height / 2;
-      if (y > rect.top && y < rect.bottom) {
-        targetIndex = parseInt(cards[i].dataset.index);
-        if (targetIndex !== dragState.srcIndex) {
-          dragState.el.parentNode.insertBefore(dragState.placeholder, cards[i]);
-        }
-        break;
-      }
+    const target = document.elementFromPoint(e.touches[0].clientX, y);
+    if (!target) return;
+    const card = target.closest('.exercise-card');
+    if (card && !card.classList.contains('drop-indicator')) {
+      card.parentNode.insertBefore(drag.placeholder, card);
     }
-    // Update visual position of dragging element
-    dragState.el.style.transform = `translateY(${y - rect.top - rect.height/2}px)`;
   }
 
   function onTouchEnd() {
     document.removeEventListener('touchmove', onTouchMove);
     document.removeEventListener('touchend', onTouchEnd);
-    if (!dragState.active) return;
+    if (!drag.active) return;
 
-    const finalY = dragState.placeholder.getBoundingClientRect().top;
-    dragState.el.style.transform = '';
-    dragState.el.classList.remove('dragging');
-    dragState.placeholder.remove();
+    const list = document.getElementById('exercise-list');
+    const children = Array.from(list.children);
+    const phIndex = children.indexOf(drag.placeholder);
 
-    const cards = Array.from(document.querySelectorAll('.exercise-card'));
-    const newIndex = cards.indexOf(dragState.el);
-    
-    if (newIndex !== -1 && newIndex !== dragState.srcIndex) {
+    let newIndex;
+    if (drag.srcIndex < phIndex) newIndex = phIndex - 1;
+    else newIndex = phIndex;
+
+    if (newIndex >= 0 && newIndex !== drag.srcIndex) {
       const arr = state.groups[currentGroup];
-      const [moved] = arr.splice(dragState.srcIndex, 1);
+      const [moved] = arr.splice(drag.srcIndex, 1);
       arr.splice(newIndex, 0, moved);
       saveState();
-      renderExercises();
     }
-    dragState.active = false;
-    dragState.el = null;
-    dragState.placeholder = null;
+
+    // Очистка
+    drag.clone.remove();
+    drag.placeholder.remove();
+    drag.active = false;
+    drag.srcIndex = -1;
+    drag.clone = null;
+    drag.placeholder = null;
+
+    renderExercises();
   }
 
-  // Button Click Handler (Event Delegation)
+  // Клик по кнопке подхода
   document.getElementById('exercise-list').addEventListener('click', e => {
     const btn = e.target.closest('.action-btn');
     if (!btn || btn.disabled) return;
@@ -312,7 +324,6 @@
     startTimer();
   });
 
-  // Timer Logic
   function startTimer() {
     state.timerEnd = Date.now() + REST_MS;
     saveState();
@@ -345,14 +356,13 @@
   window.skipTimer = () => { stopTimer(); document.getElementById('timer-overlay').classList.remove('active'); };
   window.addMinute = () => { state.timerEnd += 60000; saveState(); updateTimerUI(); };
   window.resetProgress = () => {
-    if(confirm('Сбросить все выполненные подходы для этой группы?')) {
+    if(confirm('Сбросить прогресс для этой группы?')) {
       state.groups[currentGroup] = rawData[currentGroup].map(e => ({ ...e, done: 0, completed: false }));
       saveState();
       renderExercises();
     }
   };
 
-  // Restore timer on visibility change (iOS background/foreground)
   document.addEventListener('visibilitychange', () => {
     if (!document.hidden && state.timerEnd > Date.now()) {
       document.getElementById('timer-overlay').classList.add('active');
@@ -362,7 +372,6 @@
     }
   });
 
-  // Init
   state = loadState();
   renderGroups();
 </script>
