@@ -363,7 +363,6 @@
 	
   function updateTimerUI() {
     if (!state.timerEnd) return;
-    loadState();
     const remaining = Math.max(0, state.timerEnd - Date.now());
     const m = Math.floor(remaining / 60000); const s = Math.floor((remaining % 60000) / 1000);
     document.getElementById('timer-display').textContent = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
@@ -397,7 +396,6 @@
   };
 
   document.addEventListener('visibilitychange', () => {
-    loadState();
     if (!document.hidden && state.timerEnd > 0) {
       if (state.timerNextEx && state.timerNextEx.complete) startTimer(null, true);
       else if (state.timerEnd > Date.now()) startTimer(state.timerNextEx, false);
