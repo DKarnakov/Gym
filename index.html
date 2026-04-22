@@ -11,6 +11,7 @@
     :root {
       --bg: #f2f2f7; --card: #ffffff; --text: #000000; --text-secondary: #8e8e93;
       --accent: #007aff; --success: #34c759; --danger: #ff3b30; --timer-bg: rgba(0,0,0,0.85);
+	  --timer-glow: #f79f4c;
     }
     @media (prefers-color-scheme: dark) {
       :root { --bg: #000000; --card: #1c1c1e; --text: #ffffff; }
@@ -39,6 +40,11 @@
       box-shadow: 0 2px 8px rgba(0,0,0,0.08); position: relative;
     }
 	.exercise-card.current { box-shadow: 0 0px 15px var(--success); }
+	@keyframes pulse-glow {
+	  0%, 100% {box-shadow: 0 0px 10px var(--success); }
+      50% {box-shadow: 0 0px 15px var(--success); }
+    }
+	.exercise-card.current-timer { animation: pulse-glow 1s infinite; }
     .exercise-card.completed { background: var(--success); color: white; }
     .exercise-header { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
     .drag-handle { cursor: grab; padding: 10px 6px; font-size: 24px; color: var(--text-secondary); touch-action: none; flex-shrink: 0; }
@@ -65,18 +71,16 @@
     }
     .reset-btn:active { opacity: 0.6; }
 
-    #timer-overlay {
+    #overlay {
       position: fixed; inset: 0; background: var(--timer-bg); display: none; align-items: center; justify-content: center;
       z-index: 100; backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
     }
-    #timer-overlay.active { display: flex; }
+    #overlay.active { display: flex; }
     
-    #timer-rest-mode { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; padding: 20px; }
-    .timer-display { font-size: 72px; font-weight: 700; color: white; margin-bottom: 20px; font-variant-numeric: tabular-nums; }
+    #timer { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; }
+    .timer-display { font-size: 72px; font-weight: 700; color: var(--text); margin-bottom: 20px; font-variant-numeric: tabular-nums; }
     .next-exercise-info { text-align: center; margin-top: 24px; max-width: 80%; }
-    .next-label { font-size: 14px; color: rgba(255,255,255,0.6); text-transform: uppercase; letter-spacing: 1.2px; margin-bottom: 6px; }
-    .next-name { font-size: 22px; font-weight: 600; color: white; }
-    .next-weight { font-size: 16px; color: rgba(255,255,255,0.85); margin-top: 4px; }
+    .next-label { font-size: 10px; color: var(--text); text-transform: uppercase; letter-spacing: 1.2px; margin-bottom: 6px; }
     .timer-controls { display: flex; gap: 20px; width: 90%; max-width: 340px; }
     .timer-btn {
       flex: 1; padding: 16px; border: none; border-radius: 14px; font-size: 17px; font-weight: 600; cursor: pointer;
@@ -85,12 +89,12 @@
     .btn-add { background: var(--accent); color: white; }
     .btn-skip:active, .btn-add:active { opacity: 0.8; transform: scale(0.98); }
 
-    #timer-complete-mode { display: none; flex-direction: column; align-items: center; justify-content: center; text-align: center; width: 90%; max-width: 320px; padding: 20px; }
-    #timer-complete-mode .trophy { font-size: 64px; margin-bottom: 16px; }
-    #timer-complete-mode h2 { color: white; font-size: 24px; margin: 0 0 8px; }
-    #timer-complete-mode p { color: rgba(255,255,255,0.7); font-size: 16px; margin: 0 0 24px; }
-    #timer-complete-mode .timer-btn { width: 100%; margin-bottom: 10px; }
-    #timer-complete-mode .btn-secondary { background: rgba(255,255,255,0.15); color: white; }
+    #complete-mode { display: none; flex-direction: column; align-items: center; justify-content: center; text-align: center; width: 90%; max-width: 320px; padding: 20px; }
+    #complete-mode .trophy { font-size: 64px; margin-bottom: 16px; }
+    #complete-mode h2 { color: white; font-size: 24px; margin: 0 0 8px; }
+    #complete-mode p { color: rgba(255,255,255,0.7); font-size: 16px; margin: 0 0 24px; }
+    #complete-mode .timer-btn { width: 100%; margin-bottom: 10px; }
+    #complete-mode .btn-secondary { background: rgba(255,255,255,0.15); color: white; }
 
     .drop-indicator { height: 4px; background: var(--accent); border-radius: 2px; margin: 4px 0; opacity: 1; transition: margin 0.15s; }
     .dragging-clone {
@@ -116,25 +120,12 @@
     </div>
   </div>
 
-  <div id="timer-overlay">
-    <div id="timer-rest-mode">
-      <div class="timer-display" id="timer-display">02:00</div>
-      <div class="timer-controls">
-        <button class="timer-btn btn-skip" onclick="skipTimer()">Пропустить</button>
-        <button class="timer-btn btn-add" onclick="addMinute()">+1 минута</button>
-      </div>
-	  <div class="next-exercise-info" id="next-exercise-info" style="display: none;">
-        <div class="next-label">Следующее упражнение</div>
-        <div class="next-name" id="next-ex-name"></div>
-        <div class="next-weight" id="next-ex-weight"></div>
-      </div>
-    </div>
-    <div id="timer-complete-mode">
+  <div id="overlay">
+    <div id="complete-mode">
       <div class="trophy">🏆</div>
       <h2>Тренировка завершена!</h2>
       <p>Все упражнения выполнены. Отличная работа!</p>
-      <!-- <button class="timer-btn btn-secondary" onclick="resetProgress()">Сбросить прогресс</button> -->
-      <button class="timer-btn btn-add" onclick="skipTimer()">Закрыть</button>
+      <button class="timer-btn btn-add" onclick="closeOverlay()">Закрыть</button>
     </div>
   </div>
 
@@ -212,10 +203,11 @@
   function renderExercises() {
     const list = document.getElementById('exercise-list');
     list.innerHTML = '';
-	let currentEx = getCurrentExercise(state.groups[currentGroup]);
+	const currentEx = getCurrentExercise(state.groups[currentGroup]);
     state.groups[currentGroup].forEach((ex, idx) => {
       const card = document.createElement('div');
-      card.className = `exercise-card ${ex.completed ? 'completed' : ''} ${(currentEx === idx) ? 'current' : ''}`;
+      card.className = `exercise-card`;
+	  if (ex.completed) {card.classList.add('completed');} else if (currentEx === idx) {card.classList.add('current');};
       card.dataset.index = idx;
       const pct = Math.min(100, (ex.done / ex.sets) * 100);
       let exProgress = getPlural(ex.sets, ["подход", "подхода", "подходов"]); 
@@ -225,17 +217,34 @@
       if (ex.done > 1) {
         exProgress = "Выполнено " + getPlural(ex.done, ["подход", "подхода", "подходов"]) + " из " + ex.sets;
       }
-      let finishbtn = "Закончить " + (ex.done + 1) + " подход";
+      let finishBtn = "Закончить " + (ex.done + 1) + " подход";
       if (ex.done + 1 === ex.sets) {
-        finishbtn = "Закончить упражнение";
+        finishBtn = "Закончить упражнение";
       }
+	  const timerDiv = `
+	    <div id="timer" style="display : none">
+          <div class="timer-display" id="timer-display">02:00</div>
+            <div class="timer-controls">
+              <button class="timer-btn btn-skip" onclick="stopTimer()">Пропустить</button>
+              <button class="timer-btn btn-add" onclick="addMinute()">+1 минута</button>
+            </div>
+			<div class="next-exercise-info" id="next-exercise-info" style="display: none;">
+              <div class="next-label">Следующее упражнение</div>
+              <div class="exercise-name" id="next-ex-name"></div>
+              <div class="exercise-meta" id="next-ex-weight"></div>
+            </div>
+        </div>
+		`;
       card.innerHTML = `
+	    ${(currentEx === idx) ? '<div id="current">' : ''}
         <div class="exercise-header"><div class="drag-handle">⠿</div>
           <div class="exercise-info"><div class="exercise-name">${ex.name}</div>
             <div class="exercise-meta">Вес: ${ex.weight} | ${exProgress}</div></div></div>
         <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
-        <button class="action-btn" ${ex.completed ? 'disabled' : ''} ${!(currentEx === idx) && !ex.completed ? 'hidden' : ''} data-idx="${idx}">${ex.completed ? '✓ Выполнено' : finishbtn}</button>
-      `;
+        <button class="action-btn" ${ex.completed ? 'disabled' : ''} ${!(currentEx === idx) && !ex.completed ? 'hidden' : ''} data-idx="${idx}">${ex.completed ? '✓ Выполнено' : finishBtn}</button>
+        ${(currentEx === idx) ? '</div>' : ''}
+		${(currentEx === idx) ? timerDiv : ''}
+	  `;
       list.appendChild(card);
     });
     initDrag();
@@ -322,32 +331,36 @@
   });
 
   function startTimer(nextExercise = null, isComplete = false) {
-    const restMode = document.getElementById('timer-rest-mode');
-    const completeMode = document.getElementById('timer-complete-mode');
-    clearInterval(timerInterval);
+    const restMode = document.getElementById('timer');
+	const currEx = document.getElementById('current');
+	const completeMode = document.getElementById('complete-mode');
 
     if (isComplete) {
       state.timerNextEx = { complete: true }; state.timerEnd = 0; saveState();
       restMode.style.display = 'none'; completeMode.style.display = 'flex';
-      document.getElementById('timer-overlay').classList.add('active');
+      document.getElementById('overlay').classList.add('active');
       return;
     }
-
-    completeMode.style.display = 'none'; restMode.style.display = 'flex';
-    const infoEl = document.getElementById('next-exercise-info');
+	
+    restMode.style.display = 'flex';
+    currEx.style.display = 'none';
+	
+	const infoEl = document.getElementById('next-exercise-info');
     if (nextExercise) {
       document.getElementById('next-ex-name').textContent = nextExercise.name;
       document.getElementById('next-ex-weight').textContent = `Вес: ${nextExercise.weight}`;
       infoEl.style.display = 'block';
     } else { infoEl.style.display = 'none'; }
-
-    state.timerEnd = Date.now() + REST_MS;
-    state.timerNextEx = nextExercise ? { name: nextExercise.name, weight: nextExercise.weight } : null;
-    saveState();
-    document.getElementById('timer-overlay').classList.add('active');
-    timerInterval = setInterval(updateTimerUI, 1000); updateTimerUI();
-  }
-
+	
+	const timerCard = document.querySelector(".exercise-card.current");
+	if (timerCard) timerCard.classList.replace("current", "current-timer");
+	
+	clearInterval(timerInterval);
+	state.timerEnd = Date.now() + REST_MS;
+	saveState();
+	timerInterval = setInterval(updateTimerUI, 1000); updateTimerUI();
+	}
+	
   function updateTimerUI() {
     if (!state.timerEnd) return;
     const remaining = Math.max(0, state.timerEnd - Date.now());
@@ -358,14 +371,23 @@
       if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
     }
   }
-
+	
   function stopTimer() {
-    state.timerEnd = 0; state.timerNextEx = null; saveState(); clearInterval(timerInterval);
+    const restMode = document.getElementById('timer');
+	const currEx = document.getElementById('current');
+    restMode.style.display = 'none';
+    currEx.style.display = 'block';
+	
+	const timerCard = document.querySelector(".exercise-card.current-timer");
+	if (timerCard) timerCard.classList.replace("current-timer", "current");
+	
+    state.timerEnd = 0; state.timerNextEx = null;
+	saveState();
+	clearInterval(timerInterval);
   }
 
-  window.skipTimer = () => { stopTimer(); document.getElementById('timer-overlay').classList.remove('active'); };
+  window.closeOverlay = () => { stopTimer(); document.getElementById('overlay').classList.remove('active'); };
   window.addMinute = () => { state.timerEnd += 60000; saveState(); updateTimerUI(); };
-  
   window.resetProgress = () => {
     if(confirm('Сбросить прогресс для этой тренировки?')) {
       state.groups[currentGroup] = defaultData[currentGroup].map(e => ({ ...e, done: 0, completed: false }));
