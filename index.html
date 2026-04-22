@@ -11,7 +11,7 @@
     :root {
       --bg: #f2f2f7; --card: #ffffff; --text: #000000; --text-secondary: #8e8e93;
       --accent: #007aff; --success: #34c759; --danger: #ff3b30; --timer-bg: rgba(0,0,0,0.85);
-	    --timer-glow: #f79f4c;
+      --timer-glow: #f79f4c;
     }
     @media (prefers-color-scheme: dark) {
       :root { --bg: #000000; --card: #1c1c1e; --text: #ffffff; --success: #3bab5e;}
@@ -397,6 +397,7 @@
   };
 
   document.addEventListener('visibilitychange', () => {
+    loadState();
     if (!document.hidden && state.timerEnd > 0) {
       if (state.timerNextEx && state.timerNextEx.complete) startTimer(null, true);
       else if (state.timerEnd > Date.now()) startTimer(state.timerNextEx, false);
