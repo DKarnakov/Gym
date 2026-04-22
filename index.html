@@ -38,6 +38,7 @@
       background: var(--card); border-radius: 16px; padding: 14px; margin-bottom: 12px;
       box-shadow: 0 2px 8px rgba(0,0,0,0.08); position: relative;
     }
+	.exercise-card.current { box-shadow: 0 0px 15px var(--success); }
     .exercise-card.completed { background: var(--success); color: white; }
     .exercise-header { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
     .drag-handle { cursor: grab; padding: 10px 6px; font-size: 24px; color: var(--text-secondary); touch-action: none; flex-shrink: 0; }
@@ -56,7 +57,13 @@
     .action-btn:active { opacity: 0.8; }
     .action-btn:disabled { background: var(--text-secondary); cursor: default; }
     .nav-btn { background: none; border: none; color: var(--accent); font-size: 17px; padding: 10px 0; cursor: pointer; margin-bottom: 10px; display: flex; align-items: center; gap: 4px; }
-    .nav-btn.reset { color: var(--text-secondary); margin-top: 30px; font-size: 15px; }
+	
+	.reset-btn {
+      width: 100%; padding: 14px; margin-top: 24px; border: none; border-radius: 10px;
+      background: rgba(142, 142, 147, 0.12); color: var(--text-secondary);
+      font-size: 16px; font-weight: 500; cursor: pointer; transition: opacity 0.2s;
+    }
+    .reset-btn:active { opacity: 0.6; }
 
     #timer-overlay {
       position: fixed; inset: 0; background: var(--timer-bg); display: none; align-items: center; justify-content: center;
@@ -105,7 +112,7 @@
       <button class="nav-btn" onclick="showGroups()">← Назад</button>
       <h1 id="group-title"></h1>
       <div id="exercise-list"></div>
-      <button class="nav-btn reset" onclick="resetProgress()">🔄 Сбросить тренировку</button>
+      <button class="reset-btn" onclick="resetProgress()">Cбросить тренировку</button>
     </div>
   </div>
 
@@ -132,7 +139,7 @@
   </div>
 
 <script>
-  const STORAGE_KEY = 'workout_ios_v9';
+  const STORAGE_KEY = 'workout_ios_v11';
   const REST_MS = 120000;
   let state = { groups: {}, timerEnd: 0, timerNextEx: null };
   let currentGroup = null;
@@ -165,7 +172,7 @@
     return init;
   }
 
-  function saveState() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+  function saveState() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state));}
   
   function getPlural(number, forms) {
     const n = Math.abs(number) % 100;
@@ -205,17 +212,18 @@
   function renderExercises() {
     const list = document.getElementById('exercise-list');
     list.innerHTML = '';
+	let currentEx = getCurrentExercise(state.groups[currentGroup]);
     state.groups[currentGroup].forEach((ex, idx) => {
       const card = document.createElement('div');
-      card.className = `exercise-card ${ex.completed ? 'completed' : ''}`;
+      card.className = `exercise-card ${ex.completed ? 'completed' : ''} ${(currentEx === idx) ? 'current' : ''}`;
       card.dataset.index = idx;
       const pct = Math.min(100, (ex.done / ex.sets) * 100);
-      let exprogress = getPlural(ex.sets, ["подход", "подхода", "подходов"]); 
+      let exProgress = getPlural(ex.sets, ["подход", "подхода", "подходов"]); 
       if (ex.done === 1) {
-        exprogress = "Выполнен 1 подход из " + ex.sets;
+        exProgress = "Выполнен 1 подход из " + ex.sets;
       }
       if (ex.done > 1) {
-        exprogress = "Выполнено " + getPlural(ex.done, ["подход", "подхода", "подходов"]) + " из " + ex.sets;
+        exProgress = "Выполнено " + getPlural(ex.done, ["подход", "подхода", "подходов"]) + " из " + ex.sets;
       }
       let finishbtn = "Закончить " + (ex.done + 1) + " подход";
       if (ex.done + 1 === ex.sets) {
@@ -224,9 +232,9 @@
       card.innerHTML = `
         <div class="exercise-header"><div class="drag-handle">⠿</div>
           <div class="exercise-info"><div class="exercise-name">${ex.name}</div>
-            <div class="exercise-meta">Вес: ${ex.weight} | ${exprogress}</div></div></div>
+            <div class="exercise-meta">Вес: ${ex.weight} | ${exProgress}</div></div></div>
         <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
-        <button class="action-btn" ${ex.completed ? 'disabled' : ''} data-idx="${idx}">${ex.completed ? '✓ Выполнено' : finishbtn}</button>
+        <button class="action-btn" ${ex.completed ? 'disabled' : ''} ${!(currentEx === idx) && !ex.completed ? 'hidden' : ''} data-idx="${idx}">${ex.completed ? '✓ Выполнено' : finishbtn}</button>
       `;
       list.appendChild(card);
     });
@@ -289,6 +297,11 @@
     for (let i = idx + 1; i < n; i++) if (!exercises[i].completed) return exercises[i];
     for (let i = 0; i <= idx; i++) if (!exercises[i].completed) return exercises[i];
     return null;
+  }
+  
+  function getCurrentExercise(exercises) {
+    for (let i = 0; i < exercises.length; i++) if (!exercises[i].completed) return i;
+    return 0;
   }
 
   document.getElementById('exercise-list').addEventListener('click', e => {
