@@ -11,7 +11,7 @@
     :root {
       --bg: #f2f2f7; --card: #ffffff; --text: #000000; --text-secondary: #8e8e93;
       --accent: #007aff; --success: #34c759; --danger: #ff3b30; --timer-bg: rgba(0,0,0,0.85);
-	  --timer-glow: #f79f4c;
+	    --timer-glow: #f79f4c;
     }
     @media (prefers-color-scheme: dark) {
       :root { --bg: #000000; --card: #1c1c1e; --text: #ffffff; --success: #3bab5e;}
@@ -363,6 +363,7 @@
 	
   function updateTimerUI() {
     if (!state.timerEnd) return;
+    loadState();
     const remaining = Math.max(0, state.timerEnd - Date.now());
     const m = Math.floor(remaining / 60000); const s = Math.floor((remaining % 60000) / 1000);
     document.getElementById('timer-display').textContent = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
