@@ -10,11 +10,12 @@
   <style>
     :root {
       --bg: #f2f2f7; --card: #ffffff; --text: #000000; --text-secondary: #8e8e93;
-      --accent: #007aff; --success: #34c759; --danger: #ff3b30; --timer-bg: rgba(0,0,0,0.85);
-      --timer-glow: #f79f4c;
+      --accent: #007aff; --success: hsl(135, 59%, 50%); --danger: #ff3b30; --timer-bg: rgba(0,0,0,0.85);
+      --timer-glow: #f79f4c; --current: hsl(135, 59%, 95%);
     }
     @media (prefers-color-scheme: dark) {
-      :root { --bg: #000000; --card: #1c1c1e; --text: #ffffff; --text-secondary: #7c7c7c; --success: #3bab5e;}
+      :root { --bg: #000000; --card: #1c1c1e; --text: #ffffff; --text-secondary: #7c7c7c;
+        --current: hsl(135, 59%, 5%); --success: hsl(135, 59%, 35%);}
     }
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-touch-callout: none; }
     body {
@@ -39,7 +40,10 @@
       background: var(--card); border-radius: 16px; padding: 14px; margin-bottom: 12px;
       box-shadow: 0 2px 8px rgba(0,0,0,0.08); position: relative;
     }
-	.exercise-card.current { box-shadow: 0 0px 15px var(--success); }
+	  .exercise-card.current {
+      background: var(--current);
+      box-shadow: 0 0px 15px var(--success);
+    }
 	@keyframes pulse-glow {
 	  0%, 100% {box-shadow: 0 0px 10px var(--success); }
          50% {box-shadow: 0 0px 20px var(--success); }
