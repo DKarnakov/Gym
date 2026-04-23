@@ -125,7 +125,7 @@
       <button class="nav-btn" onclick="showGroups()">← Назад</button>
       <h1 id="group-title"></h1>
       <div id="exercise-list"></div>
-      <button class="reset-btn" onclick="resetProgress()">Cбросить тренировку</button>
+      <button class="reset-btn" onclick="resetProgress()">Перезапустить тренировку</button>
     </div>
   </div>
 
@@ -238,7 +238,7 @@
 	  const progressDiv = `
 	    <div id="progress ${(currentEx === idx) ? 'current' : ''}">
 	    <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
-        <button class="action-btn ${(ex.done + 1 === ex.sets) ? 'done' : ''}" ${ex.completed ? 'disabled' : ''} ${!(currentEx === idx) && !ex.completed ? 'hidden' : ''} data-idx="${idx}">${ex.completed ? '✓ Выполнено' : finishBtn}</button>
+        <button class="action-btn" ${ex.completed ? 'disabled' : ''} ${!(currentEx === idx) && !ex.completed ? 'hidden' : ''} data-idx="${idx}">${ex.completed ? '✓ Выполнено' : finishBtn}</button>
 		</div>
 	  `;
 	  const timerDiv = `
