@@ -134,7 +134,7 @@
       <div class="trophy">🏆</div>
       <h2>Тренировка завершена!</h2>
       <p>Все упражнения выполнены. Отличная работа!</p>
-      <button class="timer-btn btn-add" onclick="closeOverlay()">Закрыть</button>
+      <button class="action-btn done" onclick="closeOverlay()">Закрыть</button>
     </div>
   </div>
 
@@ -238,7 +238,7 @@
 	  const progressDiv = `
 	    <div id="progress ${(currentEx === idx) ? 'current' : ''}">
 	    <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
-        <button class="action-btn ${ex.completed ? 'disabled' : ''} ${(currentEx === idx) ? 'done' : ''}" ${!(currentEx === idx) && !ex.completed ? 'hidden' : ''} data-idx="${idx}">${ex.completed ? '✓ Выполнено' : finishBtn}</button>
+        <button class="action-btn ${ex.completed ? 'disabled' : ''} ${(ex.done + 1 === ex.sets) ? 'done' : ''}" ${!(currentEx === idx) && !ex.completed ? 'hidden' : ''} data-idx="${idx}">${ex.completed ? '✓ Выполнено' : finishBtn}</button>
 		</div>
 	  `;
 	  const timerDiv = `
