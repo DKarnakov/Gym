@@ -67,7 +67,7 @@
       background: var(--accent); color: white; cursor: pointer; transition: opacity 0.2s;
     }
     .action-btn:active { opacity: 0.8; }
-    .action-btn.disabled { background: var(--text-secondary); cursor: default; }
+    .action-btn:disabled { background: var(--text-secondary); cursor: default; }
     .action-btn.done { background: var(--success); }
     .nav-btn { background: none; border: none; color: var(--accent); font-size: 17px; padding: 10px 0; cursor: pointer; margin-bottom: 10px; display: flex; align-items: center; gap: 4px; }
 	  
@@ -238,7 +238,7 @@
 	  const progressDiv = `
 	    <div id="progress ${(currentEx === idx) ? 'current' : ''}">
 	    <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
-        <button class="action-btn ${ex.completed ? 'disabled' : ''} ${(ex.done + 1 === ex.sets) ? 'done' : ''}" ${!(currentEx === idx) && !ex.completed ? 'hidden' : ''} data-idx="${idx}">${ex.completed ? '✓ Выполнено' : finishBtn}</button>
+        <button class="action-btn ${(ex.done + 1 === ex.sets) ? 'done' : ''}" ${ex.completed ? 'disabled' : ''} ${!(currentEx === idx) && !ex.completed ? 'hidden' : ''} data-idx="${idx}">${ex.completed ? '✓ Выполнено' : finishBtn}</button>
 		</div>
 	  `;
 	  const timerDiv = `
