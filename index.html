@@ -14,8 +14,10 @@
       --timer-glow: #f79f4c; --current: hsl(135, 59%, 98%);
     }
     @media (prefers-color-scheme: dark) {
-      :root { --bg: #000000; --card: #1c1c1e; --text: #ffffff; --text-secondary: #7c7c7c;
-        --current: hsl(135, 59%, 5%); --success: hsl(135, 59%, 35%);}
+      :root {
+        --bg: #000000; --card: #1c1c1e; --text: #ffffff; --text-secondary: #7c7c7c;
+        --current: hsl(135, 59%, 5%); --success: hsl(135, 59%, 35%);
+		}
     }
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-touch-callout: none; }
     body {
@@ -226,31 +228,43 @@
       if (ex.done + 1 === ex.sets) {
         finishBtn = "Закончить упражнение";
       }
+	  const infoDiv = `
+	    <div class="exercise-header"><div class="drag-handle">⠿</div>
+          <div class="exercise-info"><div class="exercise-name">${ex.name}</div>
+            <div class="exercise-meta">Вес: ${ex.weight} | ${exProgress}</div></div></div>
+	  `;
+	  const progressDiv = `
+	    <div id="progress ${(currentEx === idx) ? 'current' : ''}">
+	    <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+        <button class="action-btn" ${ex.completed ? 'disabled' : ''} ${!(currentEx === idx) && !ex.completed ? 'hidden' : ''} data-idx="${idx}">${ex.completed ? '✓ Выполнено' : finishBtn}</button>
+		</div>
+	  `;
 	  const timerDiv = `
 	    <div id="timer" style="display : none">
-          <!-- <div class="timer-label">Отдых</div> --!>
           <div class="timer-display" id="timer-display">02:00</div>
             <div class="timer-controls">
               <button class="timer-btn btn-skip" onclick="stopTimer()">Пропустить</button>
               <button class="timer-btn btn-add" onclick="addMinute()">+1 минута</button>
             </div>
-			<div class="next-exercise-info" id="next-exercise-info" style="display: none;">
-              <div class="next-label">Следующее упражнение</div>
-              <div class="exercise-name" id="next-ex-name"></div>
-              <div class="exercise-meta" id="next-ex-weight"></div>
-            </div>
         </div>
 		`;
       card.innerHTML = `
 	    ${(currentEx === idx) ? '<div id="current">' : ''}
-        <div class="exercise-header"><div class="drag-handle">⠿</div>
-          <div class="exercise-info"><div class="exercise-name">${ex.name}</div>
-            <div class="exercise-meta">Вес: ${ex.weight} | ${exProgress}</div></div></div>
-        <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
-        <button class="action-btn" ${ex.completed ? 'disabled' : ''} ${!(currentEx === idx) && !ex.completed ? 'hidden' : ''} data-idx="${idx}">${ex.completed ? '✓ Выполнено' : finishBtn}</button>
-        ${(currentEx === idx) ? '</div>' : ''}
+        ${infoDiv}
+		${progressDiv}
 		${(currentEx === idx) ? timerDiv : ''}
+		${(currentEx === idx) ? '</div>' : ''}
 	  `;
+	  <!-- card.innerHTML = ` -->
+	    <!-- ${(currentEx === idx) ? '<div id="current">' : ''} -->
+        <!-- <div class="exercise-header"><div class="drag-handle">⠿</div> -->
+          <!-- <div class="exercise-info"><div class="exercise-name">${ex.name}</div> -->
+            <!-- <div class="exercise-meta">Вес: ${ex.weight} | ${exProgress}</div></div></div> -->
+        <!-- <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div> -->
+        <!-- <button class="action-btn" ${ex.completed ? 'disabled' : ''} ${!(currentEx === idx) && !ex.completed ? 'hidden' : ''} data-idx="${idx}">${ex.completed ? '✓ Выполнено' : finishBtn}</button> -->
+        <!-- ${(currentEx === idx) ? '</div>' : ''} -->
+		<!-- ${(currentEx === idx) ? timerDiv : ''} -->
+	  <!-- `; -->
       list.appendChild(card);
     });
     initDrag();
@@ -325,20 +339,19 @@
     const idx = parseInt(btn.dataset.idx);
     const ex = state.groups[currentGroup][idx];
     ex.done++;
-    let nextExInfo = null, isComplete = false;
+    isComplete = false;
     if (ex.done >= ex.sets) {
       ex.completed = true;
       const next = findNextExercise(idx, state.groups[currentGroup]);
       if (!next) isComplete = true;
-      else nextExInfo = { name: next.name, weight: next.weight };
     }
     saveState(); renderExercises();
-    startTimer(nextExInfo, isComplete);
+    startTimer(isComplete);
   });
 
-  function startTimer(nextExercise = null, isComplete = false) {
+  function startTimer(isComplete = false) {
     const restMode = document.getElementById('timer');
-	const currEx = document.getElementById('current');
+	const progressMode = document.getElementById('progress current');
 	const completeMode = document.getElementById('complete-mode');
 
     if (isComplete) {
@@ -349,14 +362,7 @@
     }
 	
     restMode.style.display = 'flex';
-    currEx.style.display = 'none';
-	
-	const infoEl = document.getElementById('next-exercise-info');
-    if (nextExercise) {
-      document.getElementById('next-ex-name').textContent = nextExercise.name;
-      document.getElementById('next-ex-weight').textContent = `Вес: ${nextExercise.weight}`;
-      infoEl.style.display = 'block';
-    } else { infoEl.style.display = 'none'; }
+    progressMode.style.display = 'none';
 	
 	const timerCard = document.querySelector(".exercise-card.current");
 	if (timerCard) timerCard.classList.replace("current", "current-timer");
@@ -380,9 +386,9 @@
 	
   function stopTimer() {
     const restMode = document.getElementById('timer');
-	const currEx = document.getElementById('current');
+	const progressMode = document.getElementById('progress current');
     restMode.style.display = 'none';
-    currEx.style.display = 'block';
+    progressMode.style.display = 'block';
 	
 	const timerCard = document.querySelector(".exercise-card.current-timer");
 	if (timerCard) timerCard.classList.replace("current-timer", "current");
