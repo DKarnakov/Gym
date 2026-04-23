@@ -237,7 +237,7 @@
 	  const progressDiv = `
 	    <div id="progress ${(currentEx === idx) ? 'current' : ''}">
 	    <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
-        <button class="action-btn" ${ex.completed ? 'disabled' : ''} ${(currentEx === idx) ? 'done' : ''} ${!(currentEx === idx) && !ex.completed ? 'hidden' : ''} data-idx="${idx}">${ex.completed ? '✓ Выполнено' : finishBtn}</button>
+        <button class="action-btn ${ex.completed ? 'disabled' : ''} ${(currentEx === idx) ? 'done' : ''}" ${!(currentEx === idx) && !ex.completed ? 'hidden' : ''} data-idx="${idx}">${ex.completed ? '✓ Выполнено' : finishBtn}</button>
 		</div>
 	  `;
 	  const timerDiv = `
@@ -256,16 +256,7 @@
 		${(currentEx === idx) ? timerDiv : ''}
 		${(currentEx === idx) ? '</div>' : ''}
 	  `;
-	  <!-- card.innerHTML = ` -->
-	    <!-- ${(currentEx === idx) ? '<div id="current">' : ''} -->
-        <!-- <div class="exercise-header"><div class="drag-handle">⠿</div> -->
-          <!-- <div class="exercise-info"><div class="exercise-name">${ex.name}</div> -->
-            <!-- <div class="exercise-meta">Вес: ${ex.weight} | ${exProgress}</div></div></div> -->
-        <!-- <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div> -->
-        <!-- <button class="action-btn" ${ex.completed ? 'disabled' : ''} ${!(currentEx === idx) && !ex.completed ? 'hidden' : ''} data-idx="${idx}">${ex.completed ? '✓ Выполнено' : finishBtn}</button> -->
-        <!-- ${(currentEx === idx) ? '</div>' : ''} -->
-		<!-- ${(currentEx === idx) ? timerDiv : ''} -->
-	  <!-- `; -->
+	  
       list.appendChild(card);
     });
     initDrag();
