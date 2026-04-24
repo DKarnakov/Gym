@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#F2F2F7">
+  <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#000000">
+  <title>Тренировочный план</title>
+  <style>
+    :root {
+      --bg: #F2F2F7; --card: #FFFFFF; --blue: #007AFF; --red: #FF3B30;
+      --gray: #8E8E93; --border: #D1D1D6; --text: #000000;
+      --shadow: rgba(0,0,0,0.08);
+      --safe-t: env(safe-area-inset-top, 20px); --safe-b: env(safe-area-inset-bottom, 20px);
+      color-scheme: light dark;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #000000; --card: #444444; --blue: #0A84FF; --red: #FF453A;
+        --gray: #8E8E93; --border: #38383A; --text: #FFFFFF;
+        --shadow: rgba(0,0,0,0.3);
+      }
+    }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; }
+    body { margin:0; padding:0; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif; background:var(--bg); color:var(--text); padding-top:var(--safe-t); padding-bottom:calc(var(--safe-b) + 80px); }
+    header { background:var(--card); padding:16px; text-align:center; font-weight:600; font-size:17px; border-bottom:1px solid var(--border); position:sticky; top:0; z-index:50; backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); }
+    .tabs { display:flex; overflow-x:auto; background:var(--card); border-bottom:1px solid var(--border); padding:0 8px; -webkit-overflow-scrolling: touch; gap:8px; align-items:center; }
+    .tabs::-webkit-scrollbar { display:none; }
+    
+    .tab-wrap { display:flex; align-items:center; gap:6px; padding:12px 10px; font-size:14px; color:var(--gray); border-bottom:2px solid transparent; transition:0.2s; flex-shrink:0; cursor:pointer; }
+    .tab-wrap.active { color:var(--blue); border-bottom-color:var(--blue); font-weight:500; }
+    .tab-menu { padding:4px; border-radius:6px; background:var(--bg); color:var(--gray); font-weight:700; line-height:1; }
+    .tab-menu:active { background:var(--border); }
+    .tab-add { background:transparent; border:1px dashed var(--border); border-radius:10px; color:var(--blue); font-size:18px; width:36px; height:36px; display:flex; align-items:center; justify-content:center; padding:0; }
+
+    .container { padding:16px; }
+    .swipe-wrap { position:relative; overflow:hidden; border-radius:12px; margin-bottom:12px; background:var(--red); height:62px; }
+    .delete-btn { position:absolute; right:0; top:0; bottom:0; width:100px; display:flex; align-items:center; justify-content:center; color:#fff; font-size:15px; font-weight:500; letter-spacing:0.5px; cursor:pointer; z-index:1; touch-action: manipulation; }
+    .ex-card { position:relative; background:var(--card); padding:0 12px; height:100%; display:flex; align-items:center; justify-content:flex-start; gap:10px; transition:transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1); touch-action:pan-y; border-radius:0px; z-index:2; box-shadow: 0 2px 8px var(--shadow); will-change: transform; }
+    .ex-info { flex:1; overflow:hidden; }
+    .ex-info h3 { margin:0; font-size:16px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color: var(--text); }
+    .ex-info p { margin:2px 0 0; font-size:13px; color:var(--gray); }
+    .grip { padding:0 8px; font-size:22px; color:var(--gray); cursor:grab; touch-action:none; flex-shrink:0; display:flex; align-items:center; }
+    .grip:active { cursor:grabbing; }
+    
+    .drop-placeholder { height:4px; background:var(--blue); border-radius:2px; margin:8px 16px; box-shadow:0 0 0 1px var(--blue); pointer-events:none; transition:all 0.15s ease; }
+    .drag-clone { pointer-events:none; border-radius:12px; background:var(--card); box-shadow:0 12px 30px rgba(0,0,0,0.25); }
+
+    .fab { position:fixed; bottom:calc(var(--safe-b) + 20px); right:20px; background:var(--blue); color:#fff; width:56px; height:56px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:28px; box-shadow:0 4px 12px rgba(0,122,255,0.4); cursor:pointer; transition:transform 0.15s; z-index:100; }
+    .fab:active { transform:scale(0.92); }
+    .hint { text-align:center; font-size:12px; color:var(--gray); margin:12px 0 0; }
+    
+    .toolbar { display:flex; flex-wrap:wrap; gap:10px; margin-top:16px; justify-content:center; align-items:center; }
+    .file-link { color:var(--blue); text-decoration:underline; font-size:14px; cursor:pointer; padding:4px 0; }
+    .toolbar-btn { padding:10px 16px; border-radius:10px; font-size:14px; font-weight:500; border:none; cursor:pointer; touch-action: manipulation; }
+    .toolbar-btn.save { background:var(--blue); color:#fff; }
+    .toolbar-btn.cancel { background:var(--border); color:var(--text); }
+    .toolbar-btn.json { background:var(--border); color:var(--text); }
+    #fileInput { display:none; }
+
+    .modal {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.4);
+      display: flex; align-items: flex-end; justify-content: center;
+      z-index: 200; backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+      opacity: 0; visibility: hidden;
+      transition: opacity 0.2s ease, visibility 0.2s;
+    }
+    .modal.active { opacity: 1; visibility: visible; }
+    .modal-sheet {
+      background: var(--card); width: 100%; border-radius: 16px 16px 0 0;
+      padding: 20px; padding-bottom: calc(var(--safe-b) + 20px);
+      transform: translateY(100%);
+      transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
+      will-change: transform;
+    }
+    .modal.active .modal-sheet { transform: translateY(0); }
+	.modal-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; }
+    .modal-title { font-size:17px; font-weight:600; color: var(--text); }
+    .close-btn { background:none; border:none; font-size:18px; color:var(--gray); cursor:pointer; }
+    .form-group { margin-bottom:14px; }
+    .form-group label { display:block; font-size:13px; color:var(--gray); margin-bottom:6px; }
+    .form-group input, .form-group select { 
+      width:100%; padding:12px; border:1px solid var(--border); border-radius:10px; font-size:16px; background:var(--bg); color: var(--text); outline:none; 
+      -webkit-appearance: none; appearance: none;
+      background-image: url("image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%238E8E93' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 12px center;
+    }
+    .form-group select { background-color: var(--bg); }
+    .form-group input:focus, .form-group select:focus { border-color:var(--blue); background: var(--card); }
+    .modal-actions { display:flex; gap:10px; margin-top:10px; }
+    .btn { border:none; padding:12px; border-radius:10px; font-size:15px; font-weight:500; cursor:pointer; touch-action: manipulation; }
+    .btn-primary { background:var(--blue); color:#fff; flex:1; }
+    .btn-secondary { background:transparent; color:var(--blue); flex:1; }
+    .btn-danger { background:transparent; color:var(--red); flex:1; }
+    .empty { text-align:center; padding:40px 0; color:var(--gray); }
+  </style>
+</head>
+<body>
+  <header>Тренировочный план</header>
+  <div class="tabs" id="workoutTabs"></div>
+  <div class="container" id="exerciseList"></div>
+  
+  <div class="toolbar">
+    <button class="toolbar-btn json" onclick="exportJSON()">Экспорт JSON</button>
+    <button class="toolbar-btn json" onclick="document.getElementById('fileInput').click()">Импорт JSON</button>
+	<!-- <a class="file-link" onclick="exportJSON()">Экспорт</a> -->
+    <!-- <a class="file-link" onclick="document.getElementById('fileInput').click()">Импорт</a> -->
+    <!-- <button class="toolbar-btn save" onclick="saveAndRedirect()">Сохранить</button> -->
+    <!-- <button class="toolbar-btn cancel" onclick="window.location.href='index.html'">Отмена</button> -->
+  </div>
+  <input type="file" id="fileInput" accept=".json" onchange="importJSON(this)">
+
+  <!-- <p class="hint">Тап — редактировать • Свайп влево — удалить • ⠿ — перетащить</p> -->
+  <div class="fab" id="addBtn">+</div>
+
+  <div class="modal" id="exModal">
+    <div class="modal-sheet">
+      <div class="modal-header"><div class="modal-title" id="exModalTitle">Упражнение</div><button class="close-btn" onclick="closeModal('exModal')">✕</button></div>
+      <div class="form-group"><label>Название</label><input type="text" id="exName" autocomplete="off"></div>
+      <div class="form-group"><label>Подходы</label><input type="number" id="exSets" inputmode="numeric"></div>
+      <div class="form-group"><label>Вес</label><input type="text" id="exWeight"></div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="closeModal('exModal')">Отмена</button>
+        <button class="btn btn-primary" onclick="saveExercise()">Сохранить</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="groupModal">
+    <div class="modal-sheet">
+      <div class="modal-header"><div class="modal-title" id="groupModalTitle">Управление группой</div><button class="close-btn" onclick="closeModal('groupModal')">✕</button></div>
+      <div class="form-group"><label>Название</label><input type="text" id="groupNewName" autocomplete="off"></div>
+      <div class="form-group"><label>Разместить группу перед группой:</label>
+        <select id="groupOrderSelect"></select>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-primary" onclick="saveGroup()">Сохранить</button>
+        <button class="btn btn-danger" onclick="deleteGroup()">Удалить группу</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+let data = {};
+let currentWorkout = '';
+let editingIdx = null;
+let editingGroup = null;
+
+const defaultData = {};
+
+const els = { tabs: document.getElementById('workoutTabs'), list: document.getElementById('exerciseList') };
+
+function save() { localStorage.setItem('workout_v12', JSON.stringify(data)); }
+function closeModal(id) { document.getElementById(id).classList.remove('active'); document.body.style.overflow = ''; }
+function closeAllSwipes() {
+  document.querySelectorAll('.ex-card[data-swiped="1"]').forEach(c => { c.style.transform = 'translateX(0)'; delete c.dataset.swiped; });
+}
+
+async function init() {
+  try {
+    const res = await fetch('data.json');
+    if (res.ok) {
+      const json = await res.json();
+      data = {};
+      for (let workout in json) {
+        const cleanWorkout = workout.trim();
+        data[cleanWorkout] = json[workout].map(ex => {
+          const c = {}; for(let k in ex) c[k.trim()] = ex[k];
+          return { name: String(c.name||'').trim(), sets: Number(c.sets||0), weight: String(c.weight||'').trim() };
+        });
+      }
+      save();
+    } else throw new Error('Network');
+  } catch {
+    const local = localStorage.getItem('workout_v12');
+    data = local ? JSON.parse(local) : JSON.parse(JSON.stringify(defaultData));
+  }
+  currentWorkout = Object.keys(data)[0] || '';
+  renderTabs(); renderList();
+}
+
+function switchWorkout(workout) { currentWorkout = workout; renderTabs(); renderList(); }
+
+function renderTabs() {
+  els.tabs.innerHTML = '';
+  Object.keys(data).forEach(workout => {
+    const wrap = document.createElement('div');
+    wrap.className = `tab-wrap ${workout === currentWorkout ? 'active' : ''}`;
+    const label = document.createElement('span'); label.className = 'tab-label'; label.textContent = workout; label.onclick = e => { e.stopPropagation(); switchWorkout(workout); };
+    const menu = document.createElement('span'); menu.className = 'tab-menu'; menu.textContent = '⋮'; menu.onclick = e => { e.stopPropagation(); showGroupActions(workout); };
+    wrap.appendChild(label);
+	<!-- wrap.appendChild(menu); -->
+	els.tabs.appendChild(wrap);
+  });
+  const addBtn = document.createElement('div'); addBtn.className = 'tab-wrap tab-add'; addBtn.textContent = '+'; addBtn.onclick = addGroup; els.tabs.appendChild(addBtn);
+}
+
+// --- Группы ---
+function showGroupActions(workout) {
+  editingGroup = workout;
+  document.getElementById('groupModalTitle').textContent = workout;
+  document.getElementById('groupNewName').value = workout;
+  
+  const select = document.getElementById('groupOrderSelect');
+  select.innerHTML = '';
+
+  const keys = Object.keys(data);
+  const currentIdx = keys.indexOf(workout);
+
+  let defaultTarget = '__end__';
+  if (currentIdx !== -1 && currentIdx < keys.length - 1) {
+    defaultTarget = keys[currentIdx + 1];
+  }
+
+  keys.forEach(k => {
+    if (k === workout) return;
+    const opt = document.createElement('option');
+    opt.value = k; opt.textContent = k;
+    select.appendChild(opt);
+  });
+
+  const endOpt = document.createElement('option');
+  endOpt.value = '__end__'; endOpt.textContent = '(переместить в конец)';
+  select.appendChild(endOpt);
+
+  select.value = defaultTarget;
+
+  document.getElementById('groupModal').classList.add('active');
+  document.body.style.overflow = 'hidden';
+  setTimeout(() => document.getElementById('groupNewName').focus(), 100);
+}
+
+function addGroup() {
+  const name = prompt('Введите название новой группы:').trim();
+  if (!name) return;
+  if (data[name]) return alert('Группа уже существует');
+  // Добавляем в конец
+  data[name] = [];
+  currentWorkout = name;
+  save(); renderTabs(); renderList();
+}
+
+function saveGroup() {
+  const newName = document.getElementById('groupNewName').value.trim();
+  if (!newName) return alert('Введите название');
+  const orderTarget = document.getElementById('groupOrderSelect').value;
+
+  let finalKey = newName;
+  if (newName !== editingGroup) {
+    if (data[newName]) return alert('Имя уже занято');
+    data[newName] = data[editingGroup];
+    delete data[editingGroup];
+  }
+
+  // Получаем актуальный порядок КЛЮЧЕЙ из data
+  let keys = Object.keys(data);
+  const currentIdx = keys.indexOf(finalKey);
+  if (currentIdx !== -1) keys.splice(currentIdx, 1);
+
+  let newOrder;
+  if (orderTarget === '__end__') {
+    newOrder = [...keys, finalKey];
+  } else {
+    const targetIdx = keys.indexOf(orderTarget);
+    if (targetIdx === -1) {
+      // fallback: в конец
+      newOrder = [...keys, finalKey];
+    } else {
+      newOrder = [...keys.slice(0, targetIdx), finalKey, ...keys.slice(targetIdx)];
+    }
+  }
+
+  const orderedData = {};
+  newOrder.forEach(k => orderedData[k] = data[k]);
+  data = orderedData;
+
+  if (currentWorkout === editingGroup || currentWorkout === newName) currentWorkout = finalKey;
+  save(); renderTabs(); renderList(); closeModal('groupModal');
+}
+
+function deleteGroup() {
+  if (Object.keys(data).length <= 1) return alert('Нельзя удалить последнюю группу');
+  if (!confirm(`Удалить "${editingGroup}" и все упражнения в ней?`)) return;
+  delete data[editingGroup];
+  currentWorkout = currentWorkout === editingGroup ? Object.keys(data)[0] : currentWorkout;
+  save(); renderTabs(); renderList(); closeModal('groupModal');
+}
+
+// --- Упражнения ---
+function renderList() {
+  els.list.innerHTML = '';
+  const exs = data[currentWorkout] || [];
+  if (!exs.length) { els.list.innerHTML = '<div class="empty">Нет упражнений. Нажмите + чтобы добавить.</div>'; return; }
+  exs.forEach((ex, i) => {
+    const wrap = document.createElement('div'); wrap.className = 'swipe-wrap';
+    wrap.innerHTML = `<div class="delete-btn" data-idx="${i}">Удалить</div><div class="ex-card" data-idx="${i}">
+	                  <div class="grip" data-idx="${i}">⠿</div><div class="ex-info"><h3>${ex.name}</h3><p>Вес: ${ex.weight} | ${getPlural(ex.sets, ["подход", "подхода", "подходов"])}</p></div></div>`;
+    els.list.appendChild(wrap);
+  });
+}
+
+function getPlural(number, forms) {
+  const n = Math.abs(number) % 100;
+  const n1 = n % 10;
+			
+  if (n > 10 && n < 20) {return number + " " + forms[2];}
+  if (n1 > 1 && n1 < 5) {return number + " " + forms[1];}
+  if (n1 === 1) {return number + " " + forms[0];}
+  return number + " " + forms[2];
+}
+
+function openExModal(i = null) {
+  editingIdx = i;
+  document.getElementById('exModalTitle').textContent = i !== null ? 'Редактировать' : 'Новое упражнение';
+  if (i !== null) {
+    const ex = data[currentWorkout][i];
+    document.getElementById('exName').value = ex.name; document.getElementById('exSets').value = ex.sets; document.getElementById('exWeight').value = ex.weight;
+  } else {
+    document.getElementById('exName').value = document.getElementById('exSets').value = document.getElementById('exWeight').value = '';
+  }
+  document.getElementById('exModal').classList.add('active'); document.body.style.overflow = 'hidden';
+  setTimeout(() => document.getElementById('exName').focus(), 100);
+  const l = document.getElementById('exName').value.length;
+  setTimeout(() => document.getElementById('exName').setSelectionRange(l, l), 110);
+}
+function saveExercise() {
+  const name = document.getElementById('exName').value.trim(), sets = parseInt(document.getElementById('exSets').value) || 0, weight = document.getElementById('exWeight').value.trim();
+  if (!name) return alert('Введите название');
+  const obj = { name, sets, weight };
+  if (editingIdx !== null) data[currentWorkout][editingIdx] = obj; else data[currentWorkout].push(obj);
+  save(); renderList(); closeModal('exModal');
+}
+
+// --- Drag & Drop + Swipe ---
+const placeholder = document.createElement('div'); placeholder.className = 'drop-placeholder'; placeholder.style.display = 'none'; els.list.appendChild(placeholder);
+let swipeState = {}, dragState = {};
+
+els.list.addEventListener('touchstart', e => {
+  if (document.getElementById('exModal').classList.contains('active') || document.getElementById('groupModal').classList.contains('active')) return;
+  const grip = e.target.closest('.grip'), card = e.target.closest('.ex-card'), delBtn = e.target.closest('.delete-btn');
+  const openSwipe = els.list.querySelector('.ex-card[data-swiped="1"]');
+  if (openSwipe) { const wrap = openSwipe.closest('.swipe-wrap'); if (!wrap.contains(e.target) && !delBtn) closeAllSwipes(); }
+  
+  if (grip) {
+    e.preventDefault();
+    const wrap = grip.closest('.swipe-wrap'), targetCard = wrap.querySelector('.ex-card'), rect = targetCard.getBoundingClientRect();
+    dragState = { idx: parseInt(grip.dataset.idx), card: targetCard, wrapper: wrap, rect, startY: e.touches[0].clientY };
+    dragState.clone = targetCard.cloneNode(true); dragState.clone.classList.add('drag-clone');
+    Object.assign(dragState.clone.style, { position:'fixed', zIndex:'999', pointerEvents:'none', top:`${rect.top}px`, left:`${rect.left}px`, width:`${Math.round(rect.width)}px`, height:`${Math.round(rect.height)}px`, margin:'0', transition:'none', display:'flex', boxSizing:'border-box', opacity:'0.7' });
+    document.body.appendChild(dragState.clone); wrap.style.display = 'none'; placeholder.style.display = 'block'; els.list.insertBefore(placeholder, wrap.nextElementSibling);
+  } else if (card) {
+    swipeState = { startX: e.touches[0].clientX, startY: e.touches[0].clientY, el: card, moved: false, dir: 0 }; card.style.transition = 'none';
+  }
+}, { passive: false });
+
+els.list.addEventListener('touchmove', e => {
+  if (dragState.clone) {
+    e.preventDefault(); const y = e.touches[0].clientY; dragState.clone.style.top = `${dragState.rect.top + (y - dragState.startY)}px`;
+    const cards = Array.from(els.list.querySelectorAll('.ex-card'));
+    const targetCard = cards.find(el => { const r = el.getBoundingClientRect(); return y >= r.top && y <= r.bottom && el !== dragState.card; });
+    if (targetCard) {
+      const wrap = targetCard.closest('.swipe-wrap'), wrapRect = wrap.getBoundingClientRect();
+      dragState.targetWrap = wrap; dragState.insertBefore = y < wrapRect.top + wrapRect.height / 2;
+      if (placeholder !== (dragState.insertBefore ? wrap : wrap.nextElementSibling)) els.list.insertBefore(placeholder, dragState.insertBefore ? wrap : wrap.nextElementSibling);
+    }
+  } else if (swipeState.el) {
+    const dx = e.touches[0].clientX - swipeState.startX, dy = e.touches[0].clientY - swipeState.startY;
+    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 8) { swipeState.moved = true; swipeState.dir = dx; swipeState.el.style.transform = `translateX(${Math.max(Math.min(dx, 0), -100)}px)`; e.preventDefault(); }
+  }
+}, { passive: false });
+
+els.list.addEventListener('touchend', e => {
+  if (dragState.clone) {
+    dragState.clone.remove(); dragState.wrapper.style.display = ''; placeholder.style.display = 'none';
+    let newIndex = dragState.idx;
+    if (dragState.targetWrap && dragState.targetWrap !== dragState.wrapper) {
+      const targetIdx = parseInt(dragState.targetWrap.querySelector('.ex-card').dataset.idx);
+      newIndex = dragState.insertBefore ? targetIdx : targetIdx + 1; if (dragState.idx < newIndex) newIndex--;
+    }
+    if (newIndex !== dragState.idx) { const item = data[currentWorkout].splice(dragState.idx, 1)[0]; data[currentWorkout].splice(newIndex, 0, item); save(); renderList(); }
+    dragState = {};
+  } else if (swipeState.el) {
+    const card = swipeState.el; card.style.transition = 'transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1)';
+    if (swipeState.moved && swipeState.dir < -45) { card.style.transform = 'translateX(-100px)'; card.dataset.swiped = '1'; }
+    else { card.style.transform = 'translateX(0)'; if (!swipeState.moved) openExModal(parseInt(card.dataset.idx)); }
+    swipeState = {};
+  }
+});
+
+els.list.addEventListener('click', e => {
+  const delBtn = e.target.closest('.delete-btn');
+  if (delBtn) { e.preventDefault(); e.stopPropagation(); if (confirm('Удалить упражнение?')) { data[currentWorkout].splice(parseInt(delBtn.dataset.idx), 1); save(); renderList(); } return; }
+  closeAllSwipes();
+});
+
+// --- Export / Import / Save ---
+function exportJSON() {
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'workout_export.json'; a.click();
+}
+function importJSON(input) {
+  const file = input.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const json = JSON.parse(e.target.result);
+      data = {}; currentWorkout = '';
+      for (let d in json) {
+        const cleanWorkout = d.trim();
+        data[cleanWorkout] = json[d].map(ex => {
+          const c = {}; for(let k in ex) c[k.trim()] = ex[k];
+          return { name: String(c.name||'').trim(), sets: Number(c.sets||0), weight: String(c.weight||'').trim() };
+        });
+      }
+      currentWorkout = Object.keys(data)[0] || '';
+      save(); renderTabs(); renderList(); alert('Данные успешно загружены');
+    } catch { alert('Ошибка формата JSON'); }
+  };
+  reader.readAsText(file); input.value = '';
+}
+function saveAndRedirect() {
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'data.json'; a.click();
+  setTimeout(() => window.location.href = 'index.html', 600);
+}
+
+document.getElementById('addBtn').onclick = () => openExModal();
+window.addEventListener('keydown', e => { if (e.key === 'Escape') { closeModal('exModal'); closeModal('groupModal'); } });
+document.getElementById('exModal').onclick = e => { if (e.target.id === 'exModal') closeModal('exModal'); };
+document.getElementById('groupModal').onclick = e => { if (e.target.id === 'groupModal') closeModal('groupModal'); };
+
+init();
+</script>
+</body>
+</html>
