@@ -54,8 +54,8 @@
       from { transform: scale(1.05); }
         to { transform: scale(1.0); }
     }
-    .exercise-card.current-timer { animation: pulse-glow 1s infinite; }
-    .exercise-card.current-timer.new-ex { animation: new 1s ease-out; }
+    .exercise-card.current-timer { animation: pulse-glow 1s infinite;}
+    .exercise-card.current-timer.new-ex { animation: new 0.5s ease-out, pulse-glow 1s infinite; }
     .exercise-card.completed { background: var(--success); color: white; }
     .exercise-header { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
     .drag-handle { cursor: grab; padding: 10px 6px; font-size: 24px; color: var(--text-secondary); touch-action: none; flex-shrink: 0; }
@@ -222,6 +222,7 @@
       const card = document.createElement('div');
       card.className = `exercise-card`;
       if (ex.completed) {card.classList.add('completed');} else if (currentEx === idx) {card.classList.add('current');};
+      if (ex.done === 0) card.classList.add('new-ex');
       card.dataset.index = idx;
       const pct = Math.min(100, (ex.done / ex.sets) * 100);
       let exProgress = getPlural(ex.sets, ["подход", "подхода", "подходов"]); 
@@ -256,11 +257,9 @@
         </div>
       `;
       card.innerHTML = `
-        ${(currentEx === idx) ? (ex.done != 0 ? '<div id="current">' : '<div id="current new-ex">') : ''}
         ${infoDiv}
         ${progressDiv}
         ${(currentEx === idx) ? timerDiv : ''}
-        ${(currentEx === idx) ? '</div>' : ''}
     `;
 
     list.appendChild(card);
@@ -370,18 +369,18 @@
     saveState();
     timerInterval = setInterval(updateTimerUI, 1000); updateTimerUI();
   }
-  
+
   function updateTimerUI() {
     if (!state.timerEnd) return;
     const remaining = Math.max(0, state.timerEnd - Date.now());
     const m = Math.floor(remaining / 60000); const s = Math.floor((remaining % 60000) / 1000);
     document.getElementById('timer-display').textContent = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
     if (remaining <= 0) {
-      stopTimer(); document.getElementById('timer-overlay').classList.remove('active');
+      stopTimer();
       if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
     }
   }
-  
+
   function stopTimer() {
     const restMode = document.getElementById('timer');
     const progressMode = document.getElementById('progress current');
