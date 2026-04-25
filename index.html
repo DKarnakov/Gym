@@ -17,7 +17,7 @@
       :root {
         --bg: #000000; --card: #1c1c1e; --text: #ffffff; --text-secondary: #7c7c7c;
         --current: hsl(135, 59%, 5%); --success: hsl(135, 59%, 35%);
-		}
+    }
     }
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-touch-callout: none; }
     body {
@@ -42,15 +42,20 @@
       background: var(--card); border-radius: 16px; padding: 14px; margin-bottom: 12px;
       box-shadow: 0 2px 8px rgba(0,0,0,0.08); position: relative;
     }
-	  .exercise-card.current {
+    .exercise-card.current {
       background: var(--current);
       box-shadow: 0 0px 15px var(--success);
     }
-	@keyframes pulse-glow {
-	  0%, 100% {box-shadow: 0 0px 10px var(--success); }
-         50% {box-shadow: 0 0px 20px var(--success); }
+    @keyframes pulse-glow {
+      0%, 100% {box-shadow: 0 0px 10px var(--success); }
+           50% {box-shadow: 0 0px 20px var(--success); }
     }
-	.exercise-card.current-timer { animation: pulse-glow 1s infinite; }
+    @keyframes new {
+      from { transform: scale(1.05); }
+        to { transform: scale(1.0); }
+    }
+    .exercise-card.current-timer { animation: pulse-glow 1s infinite; }
+    .exercise-card.current-timer.new-ex { animation: new 1s ease-out; }
     .exercise-card.completed { background: var(--success); color: white; }
     .exercise-header { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
     .drag-handle { cursor: grab; padding: 10px 6px; font-size: 24px; color: var(--text-secondary); touch-action: none; flex-shrink: 0; }
@@ -70,9 +75,9 @@
     .action-btn:disabled { background: var(--text-secondary); cursor: default; }
     .action-btn.done { background: var(--success); }
     .nav-btn { background: none; border: none; color: var(--accent); font-size: 17px; padding: 10px 0; cursor: pointer; margin-bottom: 10px; display: flex; align-items: center; gap: 4px; }
-	  
+    
   
-	.reset-btn {
+  .reset-btn {
       width: 100%; padding: 14px; margin-top: 24px; border: none; border-radius: 10px;
       background: rgba(142, 142, 147, 0.12); color: var(--text-secondary);
       font-size: 16px; font-weight: 500; cursor: pointer; transition: opacity 0.2s;
@@ -212,11 +217,11 @@
   function renderExercises() {
     const list = document.getElementById('exercise-list');
     list.innerHTML = '';
-	const currentEx = getCurrentExercise(state.groups[currentGroup]);
+    const currentEx = getCurrentExercise(state.groups[currentGroup]);
     state.groups[currentGroup].forEach((ex, idx) => {
       const card = document.createElement('div');
       card.className = `exercise-card`;
-	  if (ex.completed) {card.classList.add('completed');} else if (currentEx === idx) {card.classList.add('current');};
+      if (ex.completed) {card.classList.add('completed');} else if (currentEx === idx) {card.classList.add('current');};
       card.dataset.index = idx;
       const pct = Math.min(100, (ex.done / ex.sets) * 100);
       let exProgress = getPlural(ex.sets, ["подход", "подхода", "подходов"]); 
@@ -230,35 +235,35 @@
       if (ex.done + 1 === ex.sets) {
         finishBtn = "Закончить упражнение";
       }
-	  const infoDiv = `
-	    <div class="exercise-header"><div class="drag-handle">⠿</div>
-          <div class="exercise-info"><div class="exercise-name">${ex.name}</div>
-            <div class="exercise-meta">Вес: ${ex.weight} | ${exProgress}</div></div></div>
-	  `;
-	  const progressDiv = `
-	    <div id="progress ${(currentEx === idx) ? 'current' : ''}">
-	    <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+      const infoDiv = `
+        <div class="exercise-header"><div class="drag-handle">⠿</div>
+            <div class="exercise-info"><div class="exercise-name">${ex.name}</div>
+              <div class="exercise-meta">Вес: ${ex.weight} | ${exProgress}</div></div></div>
+      `;
+      const progressDiv = `
+        <div id="progress ${(currentEx === idx) ? 'current' : ''}">
+        <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
         <button class="action-btn" ${ex.completed ? 'disabled' : ''} ${!(currentEx === idx) && !ex.completed ? 'hidden' : ''} data-idx="${idx}">${ex.completed ? '✓ Выполнено' : finishBtn}</button>
-		</div>
-	  `;
-	  const timerDiv = `
-	    <div id="timer" style="display : none">
+        </div>
+      `;
+      const timerDiv = `
+        <div id="timer" style="display : none">
           <div class="timer-display" id="timer-display">02:00</div>
             <div class="timer-controls">
               <button class="timer-btn btn-skip" onclick="stopTimer()">Пропустить</button>
               <button class="timer-btn btn-add" onclick="addMinute()">+1 минута</button>
             </div>
         </div>
-		`;
+      `;
       card.innerHTML = `
-	    ${(currentEx === idx) ? '<div id="current">' : ''}
+        ${(currentEx === idx) ? (ex.done != 0 ? '<div id="current">' : <div id="current new-ex">) : ''}
         ${infoDiv}
-		${progressDiv}
-		${(currentEx === idx) ? timerDiv : ''}
-		${(currentEx === idx) ? '</div>' : ''}
-	  `;
-	  
-      list.appendChild(card);
+        ${progressDiv}
+        ${(currentEx === idx) ? timerDiv : ''}
+        ${(currentEx === idx) ? '</div>' : ''}
+    `;
+
+    list.appendChild(card);
     });
     initDrag();
   }
@@ -344,8 +349,8 @@
 
   function startTimer(isComplete = false) {
     const restMode = document.getElementById('timer');
-	const progressMode = document.getElementById('progress current');
-	const completeMode = document.getElementById('complete-mode');
+    const progressMode = document.getElementById('progress current');
+    const completeMode = document.getElementById('complete-mode');
 
     if (isComplete) {
       state.timerNextEx = { complete: true }; state.timerEnd = 0; saveState();
@@ -353,19 +358,19 @@
       document.getElementById('overlay').classList.add('active');
       return;
     }
-	
+
     restMode.style.display = 'flex';
     progressMode.style.display = 'none';
-	
-	const timerCard = document.querySelector(".exercise-card.current");
-	if (timerCard) timerCard.classList.replace("current", "current-timer");
-	
-	clearInterval(timerInterval);
-	state.timerEnd = Date.now() + REST_MS;
-	saveState();
-	timerInterval = setInterval(updateTimerUI, 1000); updateTimerUI();
-	}
-	
+
+    const timerCard = document.querySelector(".exercise-card.current");
+    if (timerCard) timerCard.classList.replace("current", "current-timer");
+
+    clearInterval(timerInterval);
+    state.timerEnd = Date.now() + REST_MS;
+    saveState();
+    timerInterval = setInterval(updateTimerUI, 1000); updateTimerUI();
+  }
+  
   function updateTimerUI() {
     if (!state.timerEnd) return;
     const remaining = Math.max(0, state.timerEnd - Date.now());
@@ -376,19 +381,19 @@
       if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
     }
   }
-	
+  
   function stopTimer() {
     const restMode = document.getElementById('timer');
-	const progressMode = document.getElementById('progress current');
+    const progressMode = document.getElementById('progress current');
     restMode.style.display = 'none';
     progressMode.style.display = 'block';
-	
-	const timerCard = document.querySelector(".exercise-card.current-timer");
-	if (timerCard) timerCard.classList.replace("current-timer", "current");
-	
-    state.timerEnd = 0; state.timerNextEx = null;
-	saveState();
-	clearInterval(timerInterval);
+  
+  const timerCard = document.querySelector(".exercise-card.current-timer");
+  if (timerCard) timerCard.classList.replace("current-timer", "current");
+  
+  state.timerEnd = 0; state.timerNextEx = null;
+  saveState();
+  clearInterval(timerInterval);
   }
 
   window.closeOverlay = () => { stopTimer(); document.getElementById('overlay').classList.remove('active'); };
