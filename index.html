@@ -256,7 +256,7 @@
         </div>
       `;
       card.innerHTML = `
-        ${(currentEx === idx) ? (ex.done != 0 ? '<div id="current">' : <div id="current new-ex">) : ''}
+        ${(currentEx === idx) ? (ex.done != 0 ? '<div id="current">' : '<div id="current new-ex">') : ''}
         ${infoDiv}
         ${progressDiv}
         ${(currentEx === idx) ? timerDiv : ''}
