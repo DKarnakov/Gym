@@ -446,6 +446,8 @@
     });
   });
 
+  window.onbeforeunload = function () {window.scrollTo(0, 0);};
+
   // Инициализация приложения
   loadDefaultData().then(() => {
     state = loadState();
