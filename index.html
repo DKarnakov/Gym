@@ -2,6 +2,7 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
+  <meta http-equiv="cache-control" content="no-cache">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -11,12 +12,12 @@
     :root {
       --bg: #f2f2f7; --card: #ffffff; --text: #000000; --text-secondary: #8e8e93;
       --accent: #007aff; --success: hsl(135, 59%, 50%); --danger: #ff3b30; --timer-bg: rgba(0,0,0,0.85);
-      --timer-glow: #f79f4c; --current: hsl(135, 59%, 98%);
+      --timer-glow: #f79f4c; --current: hsl(135, 59%, 98%); --reload: rgba(255, 59, 48, 0.15);
     }
     @media (prefers-color-scheme: dark) {
       :root {
         --bg: #000000; --card: #1c1c1e; --text: #ffffff; --text-secondary: #7c7c7c;
-        --current: hsl(135, 59%, 5%); --success: hsl(135, 59%, 35%);
+        --current: hsl(135, 59%, 5%); --success: hsl(135, 59%, 35%); --reload: rgba(255, 59, 48, 0.4);
     }
     }
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-touch-callout: none; }
@@ -25,8 +26,9 @@
       background: var(--bg); color: var(--text); padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
       touch-action: manipulation; min-height: 100vh;
     }
-    .screen { display: none; padding: 16px; animation: fadeIn 0.2s ease; }
-    .screen.active { display: block; }
+    .screen { display: none; flex-direction: column; min-height: 100vh; padding: 16px; animation: fadeIn 0.2s ease; }
+
+    .screen.active { display: flex; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
     
     h1 { font-size: 28px; font-weight: 700; margin: 0 0 20px; }
@@ -84,6 +86,13 @@
     }
     .reset-btn:active { opacity: 0.6; }
 
+    .clear-btn {
+      width: 100%; margin-top: auto; align-self: center; padding: 14px 28px; font-size: 16px;
+      font-weight: 500; background-color: var(--reload); color: #ffffff;
+      border: none; border-radius: 10px; cursor: pointer; transition: opacity 0.2s;
+    }
+    .clear-btn:active { opacity: 0.5; }
+
     #overlay {
       position: fixed; inset: 0; background: var(--timer-bg); display: none; align-items: center; justify-content: center;
       z-index: 100; backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
@@ -125,6 +134,7 @@
     <div id="group-screen" class="screen active">
       <h1>Тренировка</h1>
       <div id="group-list" class="btn-group"></div>
+      <button id="clear-data-btn" class="clear-btn">Обновить данные</button>
     </div>
     <div id="workout-screen" class="screen">
       <button class="nav-btn" onclick="showGroups()">← Назад</button>
@@ -144,7 +154,7 @@
   </div>
 
 <script>
-  const STORAGE_KEY = 'workout_ios_v11';
+  const STORAGE_KEY = 'workout_ios_v12';
   const REST_MS = 120000;
   let state = { groups: {}, timerEnd: 0, timerNextEx: null };
   let currentGroup = null;
@@ -409,6 +419,30 @@
       if (state.timerNextEx && state.timerNextEx.complete) startTimer(null, true);
       else if (state.timerEnd > Date.now()) startTimer(state.timerNextEx, false);
     }
+  });
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const clearBtn = document.getElementById('clear-data-btn');
+    if (!clearBtn) return;
+    clearBtn.addEventListener('click', async () => {
+      const confirmed = confirm('Прогресс тренировок будет сброшен, а данные загрузится заново из data.json');
+      if (!confirmed) return;
+
+      try {
+        localStorage.removeItem(STORAGE_KEY);
+        state = { groups: {}, timerEnd: 0, timerNextEx: null };
+        clearInterval(timerInterval);
+        defaultData = null;
+        loadDefaultData().then(() => {
+          state = loadState();
+          saveState()
+          renderGroups();
+        });
+      } catch (error) {
+        console.error('Ошибка при очистке/загрузке:', error);
+        alert('Не удалось загрузить data.json.\nПроверьте подключение и путь к файлу.');
+      }
+    });
   });
 
   // Инициализация приложения
