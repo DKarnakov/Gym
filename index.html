@@ -257,7 +257,7 @@
         </div>
       `;
       const timerDiv = `
-        <div id="timer" style="display : none">
+        <div id="timer" style="display : ${(state.timerEnd === 0) ? 'none' : 'flex'}">
           <div class="timer-display" id="timer-display">02:00</div>
             <div class="timer-controls">
               <button class="timer-btn btn-skip" onclick="stopTimer()">Пропустить</button>
@@ -395,13 +395,13 @@
     const progressMode = document.getElementById('progress current');
     restMode.style.display = 'none';
     progressMode.style.display = 'block';
-  
-  const timerCard = document.querySelector(".exercise-card.current-timer");
-  if (timerCard) timerCard.classList.replace("current-timer", "current");
-  
-  state.timerEnd = 0; state.timerNextEx = null;
-  saveState();
-  clearInterval(timerInterval);
+
+    const timerCard = document.querySelector(".exercise-card.current-timer");
+    if (timerCard) timerCard.classList.replace("current-timer", "current");
+
+    state.timerEnd = 0; state.timerNextEx = null;
+    saveState();
+    clearInterval(timerInterval);
   }
 
   window.closeOverlay = () => { stopTimer(); document.getElementById('overlay').classList.remove('active'); };
@@ -409,7 +409,7 @@
   window.resetProgress = () => {
     if(confirm('Сбросить прогресс для этой тренировки?')) {
       state.groups[currentGroup] = defaultData[currentGroup].map(e => ({ ...e, done: 0, completed: false }));
-      stopTimer(); saveState(); renderExercises();
+      stopTimer(); saveState(); renderExercises(); window.scrollTo(0, 0);
     }
   };
 
