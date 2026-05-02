@@ -253,7 +253,7 @@
       const progressDiv = `
         <div id="progress ${(currentEx === idx) ? 'current' : ''}">
         <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
-        <button class="action-btn" ${ex.completed ? 'disabled' : ''} ${!(currentEx === idx) && !ex.completed ? 'hidden' : ''} data-idx="${idx}">${ex.completed ? '✓ Выполнено' : finishBtn}</button>
+        <button class="action-btn" ${ex.completed ? 'disabled' : ''} ${((currentEx != idx && !ex.completed) || (state.timerEnd != 0)) ? 'hidden' : ''} data-idx="${idx}">${ex.completed ? '✓ Выполнено' : finishBtn}</button>
         </div>
       `;
       const timerDiv = `
