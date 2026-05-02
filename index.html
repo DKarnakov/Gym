@@ -425,7 +425,7 @@
     const clearBtn = document.getElementById('clear-data-btn');
     if (!clearBtn) return;
     clearBtn.addEventListener('click', async () => {
-      const confirmed = confirm('Прогресс тренировок будет сброшен, а данные загрузится заново из data.json');
+      const confirmed = confirm('Загрузить данные из data.json?\nПрогресс всех тренировок будет сброшен');
       if (!confirmed) return;
 
       try {
@@ -437,7 +437,6 @@
           state = loadState();
           saveState()
           renderGroups();
-          location.reload(true);
         });
       } catch (error) {
         console.error('Ошибка при очистке/загрузке:', error);
