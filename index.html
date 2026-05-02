@@ -435,7 +435,7 @@
         loadDefaultData().then(() => {
           state = loadState();
           saveState()
-          renderGroups();
+          location.reload(true);
         });
       } catch (error) {
         console.error('Ошибка при очистке/загрузке:', error);
