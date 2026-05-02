@@ -77,9 +77,8 @@
     .action-btn:disabled { background: var(--text-secondary); cursor: default; }
     .action-btn.done { background: var(--success); }
     .nav-btn { background: none; border: none; color: var(--accent); font-size: 17px; padding: 10px 0; cursor: pointer; margin-bottom: 10px; display: flex; align-items: center; gap: 4px; }
-    
-  
-  .reset-btn {
+
+    .reset-btn {
       width: 100%; padding: 14px; margin-top: 24px; border: none; border-radius: 10px;
       background: rgba(142, 142, 147, 0.12); color: var(--text-secondary);
       font-size: 16px; font-weight: 500; cursor: pointer; transition: opacity 0.2s;
@@ -98,7 +97,7 @@
       z-index: 100; backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
     }
     #overlay.active { display: flex; }
-    
+
     #timer { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; }
     .timer-label { font-size: 10px; color: var(--text); text-transform: uppercase; letter-spacing: 1.2px; margin-bottom: 6px; }
     .timer-display { font-size: 72px; font-weight: 700; color: var(--text); margin-bottom: 20px; font-variant-numeric: tabular-nums; }
@@ -453,6 +452,7 @@
   loadDefaultData().then(() => {
     state = loadState();
     renderGroups();
+    window.scrollTo(0, 0);
   });
 </script>
 </body>
