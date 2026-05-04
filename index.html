@@ -13,11 +13,13 @@
       --bg: #f2f2f7; --card: #ffffff; --text: #000000; --text-secondary: #8e8e93;
       --accent: #007aff; --success: hsl(135, 59%, 50%); --danger: #ff3b30; --timer-bg: rgba(0,0,0,0.85);
       --timer-glow: #f79f4c; --current: hsl(135, 59%, 98%); --reload: rgba(255, 59, 48, 0.15);
+      --hatch: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAYAAACp8Z5+AAAAFUlEQVR4nGNgQAJ9fZP/k8phYGAAAGoTCrmQLab0AAAAAElFTkSuQmCC);
     }
     @media (prefers-color-scheme: dark) {
       :root {
         --bg: #000000; --card: #1c1c1e; --text: #ffffff; --text-secondary: #7c7c7c;
         --current: hsl(135, 59%, 5%); --success: hsl(135, 59%, 35%); --reload: rgba(255, 59, 48, 0.4);
+        --hatch: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAYAAACp8Z5+AAAAIklEQVQIW2NkQAIPHjz4zwjjgzgKCgqMYAEYB8RmROaABAAIDA+kWCZ42QAAAABJRU5ErkJggg==);
     }
     }
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-touch-callout: none; }
@@ -41,7 +43,7 @@
     .btn-group .btn:active { transform: scale(0.98); }
 
     .exercise-card {
-      background: var(--card); border-radius: 16px; padding: 14px; margin-bottom: 12px;
+      background: var(--card); border-radius: 16px; padding: 14px; margin: 12px 0px;
       box-shadow: 0 2px 8px rgba(0,0,0,0.08); position: relative;
     }
     .exercise-card.current {
@@ -123,7 +125,7 @@
       background-attachment: scroll;
       background-clip: border-box;
       background-color: rgba(0, 0, 0, 0);
-      background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAYAAACp8Z5+AAAAFUlEQVR4nGNgQAJ9fZP/k8phYGAAAGoTCrmQLab0AAAAAElFTkSuQmCC);
+      background-image: var(--hatch);
       background-origin: padding-box;
       background-position-x: 0%;
       background-position-y: 0%;
@@ -140,6 +142,7 @@
       border-radius: 16px; padding: 14px; box-shadow: 0 12px 24px rgba(0,0,0,0.2);
       transform-origin: center;
     }
+    .dragging-clone.completed .progress-fill { background: var(--text-secondary); }
     @media (prefers-color-scheme: dark) { .dragging-clone { background: #1c1c1e; } }
     .loading { text-align: center; padding: 40px; color: var(--text-secondary); }
   </style>
@@ -333,8 +336,9 @@
     drag.startY = e.touches[0].clientY;
     
     const rect = card.getBoundingClientRect();
-    drag.clone = card.cloneNode(true); 
+    drag.clone = card.cloneNode(true);
     drag.clone.className = 'dragging-clone';
+    if (card.classList.contains('completed')) drag.clone.classList.add('completed');
     drag.clone.style.left = rect.left + 'px'; 
     drag.clone.style.top = rect.top + 'px';
     drag.clone.style.width = rect.width + 'px'; 
