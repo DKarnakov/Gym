@@ -346,7 +346,7 @@
     
     drag.placeholder = document.createElement('div'); 
     drag.placeholder.className = 'drop-indicator';
-    drag.placeholder.height = rect.height + 'px';
+    drag.placeholder.style.height = rect.height + 'px';
     card.parentNode.insertBefore(drag.placeholder, card);
     
     document.addEventListener('touchmove', onTouchMove, { passive: false });
