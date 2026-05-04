@@ -118,7 +118,23 @@
     #complete-mode .timer-btn { width: 100%; margin-bottom: 10px; }
     #complete-mode .btn-secondary { background: rgba(255,255,255,0.15); color: white; }
 
-    .drop-indicator { height: 4px; background: var(--accent); border-radius: 2px; margin: 4px 0; opacity: 1; transition: margin 0.15s; }
+    .drop-indicator {
+      height: 100px;
+      background-attachment: scroll;
+      background-clip: border-box;
+      background-color: rgba(0, 0, 0, 0);
+      background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAYAAACp8Z5+AAAAFUlEQVR4nGNgQAJ9fZP/k8phYGAAAGoTCrmQLab0AAAAAElFTkSuQmCC);
+      background-origin: padding-box;
+      background-position-x: 0%;
+      background-position-y: 0%;
+      background-repeat: repeat;
+      background-size: auto;
+      border-radius: 0px;
+      margin: 4px 0;
+      opacity: 1;
+      transition:
+      margin 0.15s;
+    }
     .dragging-clone {
       position: fixed; z-index: 9999; pointer-events: none; background: var(--card);
       border-radius: 16px; padding: 14px; box-shadow: 0 12px 24px rgba(0,0,0,0.2);
@@ -160,6 +176,7 @@
   let timerInterval = null;
   let drag = { active: false, srcIndex: -1, clone: null, placeholder: null, startY: 0 };
   let defaultData = null;
+  let scrollInterval = null;
 
   async function loadDefaultData() {
     try {
@@ -298,50 +315,102 @@
   }
 
   function onTouchStart(e) {
-    if (e.touches.length > 1) return; e.preventDefault();
-    const handle = e.target.closest('.drag-handle'); const card = handle.closest('.exercise-card');
-    drag.active = true; drag.srcIndex = parseInt(card.dataset.index); drag.startY = e.touches[0].clientY;
+    if (e.touches.length > 1) return;
+    e.preventDefault();
+    const handle = e.target.closest('.drag-handle');
+    const card = handle.closest('.exercise-card');
+
+    const activeTimer = card.querySelector('#timer');
+    const progressBlock = card.querySelector('[id^="progress"]');
+    const actionBtn = card.querySelector('.action-btn');
+
+    if (activeTimer) activeTimer.style.display = 'none';
+    if (progressBlock) progressBlock.style.display = 'block';
+    if (actionBtn && !actionBtn.disabled) actionBtn.style.display = 'none';
+
+    drag.active = true; 
+    drag.srcIndex = parseInt(card.dataset.index); 
+    drag.startY = e.touches[0].clientY;
+    
     const rect = card.getBoundingClientRect();
-    drag.clone = card.cloneNode(true); drag.clone.className = 'dragging-clone';
-    drag.clone.style.left = rect.left + 'px'; drag.clone.style.top = rect.top + 'px';
-    drag.clone.style.width = rect.width + 'px'; drag.clone.style.opacity = '0.7';
+    drag.clone = card.cloneNode(true); 
+    drag.clone.className = 'dragging-clone';
+    drag.clone.style.left = rect.left + 'px'; 
+    drag.clone.style.top = rect.top + 'px';
+    drag.clone.style.width = rect.width + 'px'; 
+    drag.clone.style.opacity = '0.7';
+    
     document.body.appendChild(drag.clone);
-    card.style.display = 'none'; card.style.pointerEvents = 'none';
-    drag.placeholder = document.createElement('div'); drag.placeholder.className = 'drop-indicator';
+    card.style.display = 'none'; 
+    card.style.pointerEvents = 'none';
+    
+    drag.placeholder = document.createElement('div'); 
+    drag.placeholder.className = 'drop-indicator';
     card.parentNode.insertBefore(drag.placeholder, card);
+    
     document.addEventListener('touchmove', onTouchMove, { passive: false });
     document.addEventListener('touchend', onTouchEnd);
   }
 
   function onTouchMove(e) {
-    if (!drag.active) return; e.preventDefault();
+    if (!drag.active) return; 
+    e.preventDefault();
     const y = e.touches[0].clientY;
+    const viewHeight = window.innerHeight;
+    const scrollThreshold = 80;
+
+    clearInterval(scrollInterval);
+    if (y < scrollThreshold) {
+      scrollInterval = setInterval(() => window.scrollBy(0, -5), 10);
+    } else if (y > viewHeight - scrollThreshold) {
+      scrollInterval = setInterval(() => window.scrollBy(0, 5), 10);
+    }
+
     drag.clone.style.transform = `translateY(${y - drag.startY}px) scale(1.02)`;
+
     const list = document.getElementById('exercise-list');
     const cards = Array.from(list.querySelectorAll('.exercise-card'));
     let inserted = false;
+
     for (const card of cards) {
       if (parseInt(card.dataset.index) === drag.srcIndex) continue;
       const rect = card.getBoundingClientRect();
-      if (y < rect.top + rect.height / 2) { list.insertBefore(drag.placeholder, card); inserted = true; break; }
+      if (y < rect.top + rect.height / 2) { 
+        list.insertBefore(drag.placeholder, card); 
+        inserted = true; 
+        break; 
+      }
     }
     if (!inserted) list.appendChild(drag.placeholder);
   }
 
   function onTouchEnd() {
-    document.removeEventListener('touchmove', onTouchMove); document.removeEventListener('touchend', onTouchEnd);
+    document.removeEventListener('touchmove', onTouchMove); 
+    document.removeEventListener('touchend', onTouchEnd);
+    clearInterval(scrollInterval);
+
     if (!drag.active) return;
+
     const list = document.getElementById('exercise-list');
     const children = Array.from(list.children);
     const phIndex = children.indexOf(drag.placeholder);
     let newIndex = drag.srcIndex < phIndex ? phIndex - 1 : phIndex;
+
     if (newIndex >= 0 && newIndex !== drag.srcIndex) {
-      const arr = state.groups[currentGroup]; const [moved] = arr.splice(drag.srcIndex, 1); arr.splice(newIndex, 0, moved);
+      const arr = state.groups[currentGroup]; 
+      const [moved] = arr.splice(drag.srcIndex, 1); 
+      arr.splice(newIndex, 0, moved);
       saveState();
     }
-    drag.clone.remove(); drag.placeholder.remove();
-    drag.active = false; drag.srcIndex = -1; drag.clone = null; drag.placeholder = null;
-    renderExercises();
+
+    drag.clone.remove(); 
+    drag.placeholder.remove();
+    drag.active = false; 
+    drag.srcIndex = -1; 
+    drag.clone = null; 
+    drag.placeholder = null;
+
+    renderExercises(); 
   }
 
   function findNextExercise(idx, exercises) {
