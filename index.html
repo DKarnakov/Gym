@@ -160,7 +160,6 @@
   let timerInterval = null;
   let drag = { active: false, srcIndex: -1, clone: null, placeholder: null, startY: 0 };
   let defaultData = null;
-  let lastEx = false;
 
   async function loadDefaultData() {
     try {
@@ -436,7 +435,7 @@
   window.resetProgress = () => {
     if(confirm('Сбросить прогресс для этой тренировки?')) {
       state.groups[currentGroup] = defaultData[currentGroup].map(e => ({ ...e, done: 0, completed: false }));
-      stopTimer(); saveState(); renderExercises();
+      stopTimer(); saveState(); renderExercises(); window.scrollTo(0, 0);
     }
   };
 
