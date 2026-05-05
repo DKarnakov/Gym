@@ -381,6 +381,7 @@
     if (currentCard) {
       const currentActionBtn = currentCard.querySelector('.action-btn');
       if (currentActionBtn) currentActionBtn.style.display = 'none';
+      currentCard.classList.remove('current-timer', 'current');
     }
 
     if (drag.hasActiveTimer) {
