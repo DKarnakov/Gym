@@ -369,34 +369,48 @@
     if (!handle) return;
     const card = handle.closest('.exercise-card');
 
+    const touchY = e.touches[0].clientY;
+    const rectBefore = card.getBoundingClientRect();
+
+    const realOffsetY = touchY - rectBefore.top;
+
     const timerCard = document.querySelector('.exercise-card.current-timer');
     drag.hasActiveTimer = !!timerCard;
 
+    const currentCard = document.querySelector('.exercise-card.current, .exercise-card.current-timer');
+    if (currentCard) {
+      const currentActionBtn = currentCard.querySelector('.action-btn');
+      if (currentActionBtn) currentActionBtn.style.display = 'none';
+    }
+
     if (drag.hasActiveTimer) {
-      document.getElementById('floating-timer-display').textContent = document.getElementById('timer-display').textContent;
-      document.getElementById('floating-timer').classList.add('active');
-      
-      const activeTimer = timerCard.querySelector('#timer');
-      const progressBlock = timerCard.querySelector('[id^="progress"]');
-      if (activeTimer) activeTimer.style.display = 'none';
-      if (progressBlock) progressBlock.style.display = 'block';
+        document.getElementById('floating-timer-display').textContent = document.getElementById('timer-display').textContent;
+        document.getElementById('floating-timer').classList.add('active');
+        
+        const activeTimer = timerCard.querySelector('#timer');
+        const progressBlock = timerCard.querySelector('[id^="progress"]');
+        if (activeTimer) activeTimer.style.display = 'none';
+        if (progressBlock) progressBlock.style.display = 'block';
+
+        timerCard.classList.remove("current-timer", "current");
     }
 
     const actionBtn = card.querySelector('.action-btn');
     if (actionBtn && !actionBtn.disabled) actionBtn.style.display = 'none';
 
-    const rect = card.getBoundingClientRect();
-    const touchY = e.touches[0].clientY;
+    const forceReflow = card.offsetHeight; 
+    const rectAfter = card.getBoundingClientRect();
 
-    drag.offsetY = touchY - rect.top; 
+    drag.offsetY = realOffsetY; 
     drag.active = true; 
     drag.srcIndex = parseInt(card.dataset.index); 
 
     drag.clone = card.cloneNode(true);
     drag.clone.className = 'dragging-clone';
-    drag.clone.style.top = rect.top + 'px'; 
-    drag.clone.style.left = rect.left + 'px';
-    drag.clone.style.width = rect.width + 'px';
+
+    drag.clone.style.top = rectBefore.top + 'px'; 
+    drag.clone.style.left = rectBefore.left + 'px';
+    drag.clone.style.width = rectBefore.width + 'px';
     drag.clone.style.margin = '0';
 
     document.body.appendChild(drag.clone);
@@ -404,13 +418,14 @@
     card.style.display = 'none';
     drag.placeholder = document.createElement('div'); 
     drag.placeholder.className = 'drop-indicator';
-
-    drag.placeholder.style.height = rect.height + 'px';
+    drag.placeholder.style.height = rectAfter.height + 'px';
     card.parentNode.insertBefore(drag.placeholder, card);
+
+    window.scrollBy(0, rectAfter.height - rectBefore.height);
 
     document.addEventListener('touchmove', onTouchMove, { passive: false });
     document.addEventListener('touchend', onTouchEnd);
-  }
+}
 
   function onTouchMove(e) {
     if (!drag.active) return; 
