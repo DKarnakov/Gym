@@ -145,6 +145,36 @@
     .dragging-clone.completed .progress-fill { background: var(--text-secondary); }
     @media (prefers-color-scheme: dark) { .dragging-clone { background: #1c1c1e; } }
     .loading { text-align: center; padding: 40px; color: var(--text-secondary); }
+
+    .floating-timer {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      padding: calc(env(safe-area-inset-top) + 10px) 0 20px;
+      background: var(--card);
+      color: var(--text);
+      display: flex;
+      justify-content: center;
+      align-items: flex-end;
+      z-index: 10000;
+      transform: translateY(-100%);
+      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      backdrop-filter: blur(15px);
+      -webkit-backdrop-filter: blur(15px);
+      pointer-events: none;
+    }
+
+    .floating-timer.active {
+      transform: translateY(0);
+      animation: pulse-glow 1s infinite;
+    }
+
+    #floating-timer-display {
+      font-size: 42px;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+    }
   </style>
 </head>
 <body>
@@ -153,6 +183,9 @@
       <h1>Тренировка</h1>
       <div id="group-list" class="btn-group"></div>
       <button id="clear-data-btn" class="clear-btn">Обновить данные</button>
+    </div>
+      <div id="floating-timer" class="floating-timer">
+      <div id="floating-timer-display">00:00</div>
     </div>
     <div id="workout-screen" class="screen">
       <button class="nav-btn" onclick="showGroups()">← Назад</button>
@@ -177,7 +210,7 @@
   let state = { groups: {}, timerEnd: 0, timerNextEx: null };
   let currentGroup = null;
   let timerInterval = null;
-  let drag = { active: false, srcIndex: -1, clone: null, placeholder: null, startY: 0 };
+  let drag = { active: false, srcIndex: -1, clone: null, placeholder: null, startY: 0, hasActiveTimer: false };
   let defaultData = null;
   let scrollInterval = null;
 
@@ -265,8 +298,9 @@
       if (ex.done + 1 === ex.sets) {
         finishBtn = "Закончить упражнение";
       };
+      const dragHtml = ex.completed ? '<div style="padding: 10px 6px; width: 36px; flex-shrink: 0;"></div>' : '<div class="drag-handle">⠿</div>';
       const infoDiv = `
-        <div class="exercise-header"><div class="drag-handle">⠿</div>
+        <div class="exercise-header">${dragHtml}
             <div class="exercise-info"><div class="exercise-name">${ex.name}</div>
               <div class="exercise-meta">Вес: ${ex.weight} | ${exProgress}</div></div></div>
       `;
@@ -318,44 +352,50 @@
   }
 
   function onTouchStart(e) {
-    if (e.touches.length > 1) return;
-    e.preventDefault();
-    const handle = e.target.closest('.drag-handle');
-    const card = handle.closest('.exercise-card');
+      if (e.touches.length > 1) return;
+      const handle = e.target.closest('.drag-handle');
+      if (!handle) return;
+      const card = handle.closest('.exercise-card');
+	
+      drag.hasActiveTimer = card.classList.contains('current-timer');
+      if (drag.hasActiveTimer) {
+        document.getElementById('floating-timer-display').textContent = document.getElementById('timer-display').textContent;
+        document.getElementById('floating-timer').classList.add('active');
+      }
+	
+      const activeTimer = card.querySelector('#timer');
+      const progressBlock = card.querySelector('[id^="progress"]');
+      const actionBtn = card.querySelector('.action-btn');
+  
+      if (activeTimer) activeTimer.style.display = 'none';
+      if (progressBlock) progressBlock.style.display = 'block';
+      if (actionBtn && !actionBtn.disabled) actionBtn.style.display = 'none';
 
-    const activeTimer = card.querySelector('#timer');
-    const progressBlock = card.querySelector('[id^="progress"]');
-    const actionBtn = card.querySelector('.action-btn');
+      const rect = card.getBoundingClientRect();
+      const touchY = e.touches[0].clientY;
 
-    if (activeTimer) activeTimer.style.display = 'none';
-    if (progressBlock) progressBlock.style.display = 'block';
-    if (actionBtn && !actionBtn.disabled) actionBtn.style.display = 'none';
+      drag.offsetY = touchY - rect.top; 
+      drag.active = true; 
+      drag.srcIndex = parseInt(card.dataset.index); 
+	
+      drag.clone = card.cloneNode(true);
+      drag.clone.className = 'dragging-clone';
+      drag.clone.style.top = rect.top + 'px'; 
+      drag.clone.style.left = rect.left + 'px';
+      drag.clone.style.width = rect.width + 'px';
+      drag.clone.style.margin = '0';
 
-    drag.active = true; 
-    drag.srcIndex = parseInt(card.dataset.index); 
-    drag.startY = e.touches[0].clientY;
-    
-    const rect = card.getBoundingClientRect();
-    drag.clone = card.cloneNode(true);
-    drag.clone.className = 'dragging-clone';
-    if (card.classList.contains('completed')) drag.clone.classList.add('completed');
-    drag.clone.style.left = rect.left + 'px'; 
-    drag.clone.style.top = rect.top + 'px';
-    drag.clone.style.width = rect.width + 'px'; 
-    drag.clone.style.opacity = '0.7';
-    
-    document.body.appendChild(drag.clone);
-    card.style.display = 'none'; 
-    card.style.pointerEvents = 'none';
-    
-    drag.placeholder = document.createElement('div'); 
-    drag.placeholder.className = 'drop-indicator';
-    drag.placeholder.style.height = rect.height + 'px';
-    card.parentNode.insertBefore(drag.placeholder, card);
-    
-    document.addEventListener('touchmove', onTouchMove, { passive: false });
-    document.addEventListener('touchend', onTouchEnd);
-  }
+      document.body.appendChild(drag.clone);
+
+      card.style.display = 'none';
+      drag.placeholder = document.createElement('div'); 
+      drag.placeholder.className = 'drop-indicator';
+      drag.placeholder.style.height = rect.height + 'px';
+      card.parentNode.insertBefore(drag.placeholder, card);
+  
+      document.addEventListener('touchmove', onTouchMove, { passive: false });
+      document.addEventListener('touchend', onTouchEnd);
+    }
 
   function onTouchMove(e) {
     if (!drag.active) return; 
@@ -371,14 +411,26 @@
       scrollInterval = setInterval(() => window.scrollBy(0, 5), 10);
     }
 
-    drag.clone.style.transform = `translateY(${y - drag.startY}px) scale(1.02)`;
+    const currentTop = y - drag.offsetY;
+    drag.clone.style.top = currentTop + 'px';
+    drag.clone.style.transform = `scale(1.02)`
 
     const list = document.getElementById('exercise-list');
     const cards = Array.from(list.querySelectorAll('.exercise-card'));
     let inserted = false;
 
-    for (const card of cards) {
+    let lastCompletedIdx = -1;
+    for (let i = 0; i < cards.length; i++) {
+      if (cards[i].classList.contains('completed')) {
+        lastCompletedIdx = i;
+      }
+    }
+    for (let i = 0; i < cards.length; i++) {
+      const card = cards[i];
       if (parseInt(card.dataset.index) === drag.srcIndex) continue;
+
+      if (i <= lastCompletedIdx) continue;
+
       const rect = card.getBoundingClientRect();
       if (y < rect.top + rect.height / 2) { 
         list.insertBefore(drag.placeholder, card); 
@@ -386,6 +438,7 @@
         break; 
       }
     }
+    
     if (!inserted) list.appendChild(drag.placeholder);
   }
 
@@ -395,6 +448,10 @@
     clearInterval(scrollInterval);
 
     if (!drag.active) return;
+
+    if (drag.hasActiveTimer) {
+      document.getElementById('floating-timer').classList.remove('active');
+    }
 
     const list = document.getElementById('exercise-list');
     const children = Array.from(list.children);
@@ -414,6 +471,7 @@
     drag.srcIndex = -1; 
     drag.clone = null; 
     drag.placeholder = null;
+    drag.hasActiveTimer = false;
 
     renderExercises(); 
   }
@@ -483,7 +541,14 @@
     if (!state.timerEnd) return;
     const remaining = Math.max(0, state.timerEnd - Date.now());
     const m = Math.floor(remaining / 60000); const s = Math.floor((remaining % 60000) / 1000);
-    document.getElementById('timer-display').textContent = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+    const timeStr = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+    document.getElementById('timer-display').textContent = timeStr;
+
+    const floatingDisplay = document.getElementById('floating-timer-display');
+    if (floatingDisplay) {
+      floatingDisplay.textContent = timeStr;
+    }
+
     if (remaining <= 0) {
       stopTimer();
       if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
