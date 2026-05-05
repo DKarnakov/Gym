@@ -28,7 +28,7 @@
       background: var(--bg); color: var(--text); padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
       touch-action: manipulation; min-height: 100vh;
     }
-    .screen { display: none; flex-direction: column; min-height: 110vh; padding: 16px; animation: fadeIn 0.2s ease; }
+    .screen { display: none; flex-direction: column; min-height: 100vh; padding: 16px; animation: fadeIn 0.2s ease; }
 
     .screen.active { display: flex; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
@@ -364,50 +364,53 @@
   }
 
   function onTouchStart(e) {
-      if (e.touches.length > 1) return;
-      const handle = e.target.closest('.drag-handle');
-      if (!handle) return;
-      const card = handle.closest('.exercise-card');
+    if (e.touches.length > 1) return;
+    const handle = e.target.closest('.drag-handle');
+    if (!handle) return;
+    const card = handle.closest('.exercise-card');
 
-      drag.hasActiveTimer = card.classList.contains('current-timer');
-      if (drag.hasActiveTimer) {
-        document.getElementById('floating-timer-display').textContent = document.getElementById('timer-display').textContent;
-        document.getElementById('floating-timer').classList.add('active');
-      }
+    const timerCard = document.querySelector('.exercise-card.current-timer');
+    drag.hasActiveTimer = !!timerCard;
 
-      const activeTimer = card.querySelector('#timer');
-      const progressBlock = card.querySelector('[id^="progress"]');
-      const actionBtn = card.querySelector('.action-btn');
-  
+    if (drag.hasActiveTimer) {
+      document.getElementById('floating-timer-display').textContent = document.getElementById('timer-display').textContent;
+      document.getElementById('floating-timer').classList.add('active');
+      
+      const activeTimer = timerCard.querySelector('#timer');
+      const progressBlock = timerCard.querySelector('[id^="progress"]');
       if (activeTimer) activeTimer.style.display = 'none';
       if (progressBlock) progressBlock.style.display = 'block';
-      if (actionBtn && !actionBtn.disabled) actionBtn.style.display = 'none';
-
-      const rect = card.getBoundingClientRect();
-      const touchY = e.touches[0].clientY;
-
-      drag.offsetY = touchY - rect.top; 
-      drag.active = true; 
-      drag.srcIndex = parseInt(card.dataset.index); 
-
-      drag.clone = card.cloneNode(true);
-      drag.clone.className = 'dragging-clone';
-      drag.clone.style.top = rect.top + 'px'; 
-      drag.clone.style.left = rect.left + 'px';
-      drag.clone.style.width = rect.width + 'px';
-      drag.clone.style.margin = '0';
-
-      document.body.appendChild(drag.clone);
-
-      card.style.display = 'none';
-      drag.placeholder = document.createElement('div'); 
-      drag.placeholder.className = 'drop-indicator';
-      drag.placeholder.style.height = rect.height + 'px';
-      card.parentNode.insertBefore(drag.placeholder, card);
-  
-      document.addEventListener('touchmove', onTouchMove, { passive: false });
-      document.addEventListener('touchend', onTouchEnd);
     }
+
+    const actionBtn = card.querySelector('.action-btn');
+    if (actionBtn && !actionBtn.disabled) actionBtn.style.display = 'none';
+
+    const rect = card.getBoundingClientRect();
+    const touchY = e.touches[0].clientY;
+
+    drag.offsetY = touchY - rect.top; 
+    drag.active = true; 
+    drag.srcIndex = parseInt(card.dataset.index); 
+
+    drag.clone = card.cloneNode(true);
+    drag.clone.className = 'dragging-clone';
+    drag.clone.style.top = rect.top + 'px'; 
+    drag.clone.style.left = rect.left + 'px';
+    drag.clone.style.width = rect.width + 'px';
+    drag.clone.style.margin = '0';
+
+    document.body.appendChild(drag.clone);
+
+    card.style.display = 'none';
+    drag.placeholder = document.createElement('div'); 
+    drag.placeholder.className = 'drop-indicator';
+
+    drag.placeholder.style.height = rect.height + 'px';
+    card.parentNode.insertBefore(drag.placeholder, card);
+
+    document.addEventListener('touchmove', onTouchMove, { passive: false });
+    document.addEventListener('touchend', onTouchEnd);
+  }
 
   function onTouchMove(e) {
     if (!drag.active) return; 
