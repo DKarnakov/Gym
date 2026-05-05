@@ -32,7 +32,7 @@
 
     .screen.active { display: flex; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-    
+
     h1 { font-size: 28px; font-weight: 700; margin: 0 0 20px; }
     .btn-group { display: flex; flex-direction: column; gap: 10px; }
     .btn-group .btn {
@@ -151,7 +151,7 @@
       top: 0;
       left: 0;
       right: 0;
-      padding: calc(env(safe-area-inset-top) + 10px) 0 20px;
+      padding: calc(env(safe-area-inset-top) + 5px) 0 15px;
       background: var(--card);
       color: var(--text);
       display: flex;
@@ -163,6 +163,7 @@
       backdrop-filter: blur(15px);
       -webkit-backdrop-filter: blur(15px);
       pointer-events: none;
+      min-height: 80px;
     }
 
     .floating-timer.active {
@@ -183,9 +184,13 @@
       <h1>Тренировка</h1>
       <div id="group-list" class="btn-group"></div>
       <button id="clear-data-btn" class="clear-btn">Обновить данные</button>
+      <div id="version-info" style="text-align: center; font-size: 10px; color: var(--text-secondary); margin-top: 8px; opacity: 0.5;"></div>
     </div>
-      <div id="floating-timer" class="floating-timer">
-      <div id="floating-timer-display">00:00</div>
+    <div id="floating-timer" class="floating-timer">
+      <div style="display: flex; flex-direction: column; align-items: center;">
+        <div class="timer-label" style="margin-bottom: 0;">Отдых</div>
+        <span id="floating-timer-display">00:00</span>
+      </div>
     </div>
     <div id="workout-screen" class="screen">
       <button class="nav-btn" onclick="showGroups()">← Назад</button>
@@ -213,15 +218,22 @@
   let drag = { active: false, srcIndex: -1, clone: null, placeholder: null, startY: 0, hasActiveTimer: false };
   let defaultData = null;
   let scrollInterval = null;
+  let dataLastUpdated = '';
 
   async function loadDefaultData() {
     try {
-      const res = await fetch('data.json');
+      const res = await fetch('data.json', { cache: "no-cache" });
       if (!res.ok) throw new Error('Network error');
+
+      const lastModified = res.headers.get('Last-Modified');
+      if (lastModified) {
+        dataLastUpdated = new Date(lastModified).toLocaleDateString('ru-RU');
+      }
+
       defaultData = await res.json();
     } catch (e) {
-      console.error('Не удалось загрузить data.json. Запустите через локальный сервер или проверьте путь.', e);
-      document.getElementById('group-list').innerHTML = '<div class="loading">Ошибка загрузки данных. Проверьте консоль.</div>';
+      console.error('Ошибка загрузки данных:', e);
+      document.getElementById('group-list').innerHTML = '<div class="loading">Ошибка загрузки данных.</div>';
     }
   }
 
@@ -356,13 +368,13 @@
       const handle = e.target.closest('.drag-handle');
       if (!handle) return;
       const card = handle.closest('.exercise-card');
-	
+
       drag.hasActiveTimer = card.classList.contains('current-timer');
       if (drag.hasActiveTimer) {
         document.getElementById('floating-timer-display').textContent = document.getElementById('timer-display').textContent;
         document.getElementById('floating-timer').classList.add('active');
       }
-	
+
       const activeTimer = card.querySelector('#timer');
       const progressBlock = card.querySelector('[id^="progress"]');
       const actionBtn = card.querySelector('.action-btn');
@@ -377,7 +389,7 @@
       drag.offsetY = touchY - rect.top; 
       drag.active = true; 
       drag.srcIndex = parseInt(card.dataset.index); 
-	
+
       drag.clone = card.cloneNode(true);
       drag.clone.className = 'dragging-clone';
       drag.clone.style.top = rect.top + 'px'; 
@@ -438,7 +450,7 @@
         break; 
       }
     }
-    
+
     if (!inserted) list.appendChild(drag.placeholder);
   }
 
@@ -613,6 +625,8 @@
   loadDefaultData().then(() => {
     state = loadState();
     renderGroups();
+    const versionInfo = document.getElementById('version-info');
+    if (versionInfo) versionInfo.textContent = `${STORAGE_KEY}_${dataLastUpdated}`;
     window.scrollTo(0, 0);
   });
 </script>
