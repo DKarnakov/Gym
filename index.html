@@ -349,8 +349,8 @@
 
       const progressDiv = `
         <div id="progress ${(currentEx === idx) ? 'current' : ''}">
-        <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
-        <button class="action-btn" ${ex.completed ? 'disabled' : ''} style="${actionStyle}" data-idx="${idx}">${ex.completed ? '✓ Выполнено' : finishBtn}</button>
+          <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+          <button class="action-btn" ${ex.completed ? 'disabled' : ''} style="${actionStyle}" data-idx="${idx}">${ex.completed ? '✓ Выполнено' : finishBtn}</button>
         </div>
       `;
 
@@ -424,7 +424,7 @@
     const y = e.touches[0].clientY;
     const viewHeight = window.innerHeight;
     const scrollThreshold = 80;
-    const timerHeight = document.getElementById('timer').clientHeight;
+    const timerBottom = document.getElementById('timer').getBoundingClientRect().bottom;
 
     clearInterval(scrollInterval);
     if (y < scrollThreshold + timerHeight) {
