@@ -424,9 +424,10 @@
     const y = e.touches[0].clientY;
     const viewHeight = window.innerHeight;
     const scrollThreshold = 80;
+    const timerHeight = document.getElementById('timer').clientHeight;
 
     clearInterval(scrollInterval);
-    if (y < scrollThreshold) {
+    if (y < scrollThreshold + timerHeight) {
       scrollInterval = setInterval(() => window.scrollBy(0, -5), 10);
     } else if (y > viewHeight - scrollThreshold) {
       scrollInterval = setInterval(() => window.scrollBy(0, 5), 10);
