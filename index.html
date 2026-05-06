@@ -402,7 +402,8 @@
     drag.clone.style.top = rectBefore.top + 'px'; 
     drag.clone.style.left = rectBefore.left + 'px';
     drag.clone.style.width = rectBefore.width + 'px';
-    drag.clone.style.margin = '0';
+    drag.clone.style.margin = '0'; 
+    drag.clone.style.transform = `scale(1.02)`
 
     document.body.appendChild(drag.clone);
 
@@ -427,7 +428,7 @@
     const timerBottom = document.getElementById('timer').getBoundingClientRect().bottom;
 
     clearInterval(scrollInterval);
-    if (y < scrollThreshold + timerHeight) {
+    if (y < scrollThreshold + timerBottom) {
       scrollInterval = setInterval(() => window.scrollBy(0, -5), 10);
     } else if (y > viewHeight - scrollThreshold) {
       scrollInterval = setInterval(() => window.scrollBy(0, 5), 10);
@@ -435,7 +436,6 @@
 
     const currentTop = y - drag.offsetY;
     drag.clone.style.top = currentTop + 'px';
-    drag.clone.style.transform = `scale(1.02)`
 
     const list = document.getElementById('exercise-list');
     const cards = Array.from(list.querySelectorAll('.exercise-card'));
