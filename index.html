@@ -61,8 +61,8 @@
     .exercise-card.current-timer { animation: pulse-glow 1s infinite;}
     .exercise-card.current-timer.new { animation: new 0.5s ease-out, pulse-glow 1s infinite; }
     .exercise-card.completed { background: var(--success); color: white; }
-    .exercise-header { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
-    .drag-handle { cursor: grab; padding: 10px 6px; font-size: 24px; color: var(--text-secondary); touch-action: none; flex-shrink: 0; }
+    .exercise-header { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
+    .drag-handle { cursor: grab; padding: 10px 6px; font-size: 24px; color: var(--text-secondary); touch-action: none; flex-shrink: 0;}
     .exercise-card.completed .drag-handle { color: rgba(255,255,255,0.7); }
     .exercise-info { flex: 1; }
     .exercise-name { font-weight: 600; font-size: 17px; }
@@ -165,7 +165,6 @@
       font-size: 72px;
       font-weight: 700;
       font-variant-numeric: tabular-nums;
-      margin-top: -12px;
     }
     .timer-label {
       font-size: 10px;
@@ -380,6 +379,7 @@
     if (e.touches.length > 1) return;
     const handle = e.target.closest('.drag-handle');
     if (!handle) return;
+    e.preventDefault();
     const card = handle.closest('.exercise-card');
 
     const touchY = e.touches[0].clientY;
