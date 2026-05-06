@@ -100,18 +100,8 @@
     }
     #overlay.active { display: flex; }
 
-    #timer { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; }
-    .timer-label { font-size: 10px; color: var(--text); text-transform: uppercase; letter-spacing: 1.2px; margin-bottom: 6px; }
-    .timer-display { font-size: 72px; font-weight: 700; color: var(--text); margin-bottom: 20px; font-variant-numeric: tabular-nums; }
     .next-exercise-info { text-align: center; margin-top: 24px; max-width: 80%; }
     .next-label { font-size: 10px; color: var(--text); text-transform: uppercase; letter-spacing: 1.2px; margin-bottom: 6px; }
-    .timer-controls { display: flex; gap: 20px; width: 90%; max-width: 340px; }
-    .timer-btn {
-      flex: 1; padding: 16px; border: none; border-radius: 14px; font-size: 17px; font-weight: 600; cursor: pointer;
-    }
-    .btn-skip { background: var(--danger); color: white; }
-    .btn-add { background: var(--accent); color: white; }
-    .btn-skip:active, .btn-add:active { opacity: 0.8; transform: scale(0.98); }
 
     #complete-mode { display: none; flex-direction: column; align-items: center; justify-content: center; text-align: center; width: 90%; max-width: 320px; padding: 20px; }
     #complete-mode .trophy { font-size: 64px; margin-bottom: 16px; }
@@ -146,7 +136,7 @@
     @media (prefers-color-scheme: dark) { .dragging-clone { background: #1c1c1e; } }
     .loading { text-align: center; padding: 40px; color: var(--text-secondary); }
 
-    .floating-timer {
+    .timer {
       position: fixed;
       top: 0;
       left: 0;
@@ -164,18 +154,33 @@
       -webkit-backdrop-filter: blur(15px);
       pointer-events: none;
       min-height: 80px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
     }
-
-    .floating-timer.active {
+    .timer.active {
       transform: translateY(0);
       animation: pulse-glow 1s infinite;
+      pointer-events: auto;
     }
-
-    #floating-timer-display {
-      font-size: 42px;
+    #timer-display {
+      font-size: 72px;
       font-weight: 700;
       font-variant-numeric: tabular-nums;
+      margin-top: -12px;
     }
+    .timer-label {
+      font-size: 10px;
+      color: var(--text);
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      margin-bottom: 0px;
+    }
+    .timer-controls { display: flex; gap: 20px; width: 90%; max-width: 340px; }
+    .timer-btn {
+      flex: 1; padding: 16px; border: none; border-radius: 14px; font-size: 17px; font-weight: 600; cursor: pointer;
+    }
+    .btn-skip { background: var(--danger); color: white; }
+    .btn-add { background: var(--accent); color: white; }
+    .btn-skip:active, .btn-add:active { opacity: 0.8; transform: scale(0.98); }
   </style>
 </head>
 <body>
@@ -186,15 +191,20 @@
       <button id="clear-data-btn" class="clear-btn">Обновить данные</button>
       <div id="version-info" style="text-align: center; font-size: 10px; color: var(--text-secondary); margin-top: 8px; opacity: 0.5;"></div>
     </div>
-    <div id="floating-timer" class="floating-timer">
-      <div style="display: flex; flex-direction: column; align-items: center;">
+    <div id="timer" class="timer">
+      <div style="display: flex; flex-direction: column; align-items: center; width: 100%;">
         <div class="timer-label" style="margin-bottom: 0;">Отдых</div>
-        <span id="floating-timer-display">00:00</span>
+        <span id="timer-display">00:00</span>
+        <div class="timer-controls" style="margin-top: 10px; width: 90%; max-width: 340px;">
+          <button class="timer-btn btn-skip" onclick="stopTimer()">Пропустить</button>
+          <button class="timer-btn btn-add" onclick="addMinute()">+1 минута</button>
+        </div>
       </div>
     </div>
     <div id="workout-screen" class="screen">
       <button class="nav-btn" onclick="showGroups()">← Назад</button>
       <h1 id="group-title"></h1>
+      <div id="space"></div>
       <div id="exercise-list"></div>
       <button class="reset-btn" onclick="resetProgress()">Перезапустить тренировку</button>
     </div>
@@ -215,7 +225,7 @@
   let state = { groups: {}, timerEnd: 0, timerNextEx: null };
   let currentGroup = null;
   let timerInterval = null;
-  let drag = { active: false, srcIndex: -1, clone: null, placeholder: null, startY: 0, hasActiveTimer: false };
+  let drag = { active: false, srcIndex: -1, clone: null, placeholder: null, startY: 0 };
   let defaultData = null;
   let scrollInterval = null;
   let dataLastUpdated = '';
@@ -252,15 +262,24 @@
   }
 
   function saveState() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state));}
-  
+
   function getPlural(number, forms) {
     const n = Math.abs(number) % 100;
     const n1 = n % 10;
+    
+    let selectedForm;
+  
+    if (n > 10 && n < 20) {
+      selectedForm = forms[2];
+    } else if (n1 > 1 && n1 < 5) {
+      selectedForm = forms[1];
+    } else if (n1 === 1) {
+      selectedForm = forms[0];
+    } else {
+      selectedForm = forms[2];
+    }
 
-    if (n > 10 && n < 20) {return number + " " + forms[2];}
-    if (n1 > 1 && n1 < 5) {return number + " " + forms[1];}
-    if (n1 === 1) {return number + " " + forms[0];}
-    return number + " " + forms[2];
+    return selectedForm.includes('%s') ? selectedForm.replace('%s', number) : selectedForm;
   }
 
   function renderGroups() {
@@ -293,69 +312,63 @@
     const list = document.getElementById('exercise-list');
     list.innerHTML = '';
     const currentEx = getCurrentExercise(state.groups[currentGroup]);
+    const isTimerRunning = state.timerEnd > Date.now();
+
     state.groups[currentGroup].forEach((ex, idx) => {
       const card = document.createElement('div');
       card.className = `exercise-card`;
-      if (ex.completed) {card.classList.add('completed');} else if (currentEx === idx) {card.classList.add('current');};
+
+      if (ex.completed) {
+        card.classList.add('completed');
+      } else if (currentEx === idx) {
+        card.classList.add(isTimerRunning ? 'current-timer' : 'current');
+      }
       card.dataset.index = idx;
+
       const pct = Math.min(100, (ex.done / ex.sets) * 100);
-      let exProgress = getPlural(ex.sets, ["подход", "подхода", "подходов"]); 
-      if (ex.done === 1) {
-        exProgress = "Выполнен 1 подход из " + ex.sets;
-      };
-      if (ex.done > 1) {
-        exProgress = "Выполнено " + getPlural(ex.done, ["подход", "подхода", "подходов"]) + " из " + ex.sets;
-      };
+
+      let exProgress = getPlural(ex.sets, ["%s подход", "%s подхода", "%s подходов"]);
+      if (ex.done > 0) {
+        exProgress = getPlural(ex.done, ["Выполнен %s подход из ", "Выполнено %s подхода из ", "Выполнено %s подходов из "]);
+        exProgress += ex.sets;
+      }
+
       let finishBtn = "Закончить " + (ex.done + 1) + " подход";
       if (ex.done + 1 === ex.sets) {
         finishBtn = "Закончить упражнение";
       };
+
       const dragHtml = ex.completed ? '<div style="padding: 10px 6px; width: 36px; flex-shrink: 0;"></div>' : '<div class="drag-handle">⠿</div>';
       const infoDiv = `
         <div class="exercise-header">${dragHtml}
             <div class="exercise-info"><div class="exercise-name">${ex.name}</div>
               <div class="exercise-meta">Вес: ${ex.weight} | ${exProgress}</div></div></div>
       `;
+
+      const showActionBtn = (currentEx === idx && !isTimerRunning) || ex.completed;
+      const actionStyle = showActionBtn ? '' : 'display: none;';
+
       const progressDiv = `
         <div id="progress ${(currentEx === idx) ? 'current' : ''}">
         <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
-        <button class="action-btn" ${ex.completed ? 'disabled' : ''} ${!(currentEx === idx) && !ex.completed ? 'hidden' : ''} data-idx="${idx}">${ex.completed ? '✓ Выполнено' : finishBtn}</button>
+        <button class="action-btn" ${ex.completed ? 'disabled' : ''} style="${actionStyle}" data-idx="${idx}">${ex.completed ? '✓ Выполнено' : finishBtn}</button>
         </div>
       `;
-      const timerDiv = `
-        <div id="timer" style="display : none">
-          <div class="timer-display" id="timer-display">02:00</div>
-            <div class="timer-controls">
-              <button class="timer-btn btn-skip" onclick="stopTimer()">Пропустить</button>
-              <button class="timer-btn btn-add" onclick="addMinute()">+1 минута</button>
-            </div>
-        </div>
-      `;
+
       card.innerHTML = `
         ${infoDiv}
         ${progressDiv}
-        ${(currentEx === idx) ? timerDiv : ''}
     `;
 
     list.appendChild(card);
     });
     initDrag();
 
-    if (state.timerEnd > Date.now()) {
-      const restMode = document.getElementById('timer');
-      const progressMode = document.getElementById('progress current');
-
-      if (restMode && progressMode) {
-        restMode.style.display = 'flex';
-        progressMode.style.display = 'none';
-      }
-
-      const timerCard = document.querySelector(".exercise-card.current");
-      if (timerCard) {
-        timerCard.classList.replace("current", "current-timer");
-      }
-
+    if (isTimerRunning) {
+      document.getElementById('timer').classList.add('active');
       updateTimerUI();
+    } else {
+      document.getElementById('timer').classList.remove('active');
     }
   }
 
@@ -371,33 +384,11 @@
 
     const touchY = e.touches[0].clientY;
     const rectBefore = card.getBoundingClientRect();
-
     const realOffsetY = touchY - rectBefore.top;
 
-    const timerCard = document.querySelector('.exercise-card.current-timer');
-    drag.hasActiveTimer = !!timerCard;
-
-    const currentCard = document.querySelector('.exercise-card.current, .exercise-card.current-timer');
-    if (currentCard) {
-      const currentActionBtn = currentCard.querySelector('.action-btn');
-      if (currentActionBtn) currentActionBtn.style.display = 'none';
-      currentCard.classList.remove('current-timer', 'current');
-    }
-
-    if (drag.hasActiveTimer) {
-        document.getElementById('floating-timer-display').textContent = document.getElementById('timer-display').textContent;
-        document.getElementById('floating-timer').classList.add('active');
-        
-        const activeTimer = timerCard.querySelector('#timer');
-        const progressBlock = timerCard.querySelector('[id^="progress"]');
-        if (activeTimer) activeTimer.style.display = 'none';
-        if (progressBlock) progressBlock.style.display = 'block';
-
-        timerCard.classList.remove("current-timer", "current");
-    }
-
-    const actionBtn = card.querySelector('.action-btn');
-    if (actionBtn && !actionBtn.disabled) actionBtn.style.display = 'none';
+    document.querySelectorAll('.exercise-card:not(.completed) .action-btn').forEach(btn => {
+      btn.style.display = 'none';
+    });
 
     const forceReflow = card.offsetHeight; 
     const rectAfter = card.getBoundingClientRect();
@@ -408,7 +399,6 @@
 
     drag.clone = card.cloneNode(true);
     drag.clone.className = 'dragging-clone';
-
     drag.clone.style.top = rectBefore.top + 'px'; 
     drag.clone.style.left = rectBefore.left + 'px';
     drag.clone.style.width = rectBefore.width + 'px';
@@ -480,10 +470,6 @@
 
     if (!drag.active) return;
 
-    if (drag.hasActiveTimer) {
-      document.getElementById('floating-timer').classList.remove('active');
-    }
-
     const list = document.getElementById('exercise-list');
     const children = Array.from(list.children);
     const phIndex = children.indexOf(drag.placeholder);
@@ -502,7 +488,6 @@
     drag.srcIndex = -1; 
     drag.clone = null; 
     drag.placeholder = null;
-    drag.hasActiveTimer = false;
 
     renderExercises(); 
   }
@@ -539,28 +524,28 @@
   });
 
   function startTimer(isComplete = false, isNewExercise = false) {
-    const restMode = document.getElementById('timer');
-    const progressMode = document.getElementById('progress current');
     const completeMode = document.getElementById('complete-mode');
 
     if (isComplete) {
       state.timerNextEx = { complete: true }; state.timerEnd = 0; saveState();
-      restMode.style.display = 'none'; completeMode.style.display = 'flex';
+      completeMode.style.display = 'flex';
       document.getElementById('overlay').classList.add('active');
       return;
     }
 
-    restMode.style.display = 'flex';
-    progressMode.style.display = 'none';
+    document.getElementById('timer').classList.add('active');
 
-    const timerCard = document.querySelector(".exercise-card.current");
-    if (timerCard) {
-      timerCard.classList.replace("current", "current-timer");
-
+    const currentCard = document.querySelector(".exercise-card.current");
+    if (currentCard) {
+      currentCard.classList.replace("current", "current-timer");
       if (isNewExercise) {
-        timerCard.classList.add("new");
+        currentCard.classList.add("new");
       }
+      const btn = currentCard.querySelector('.action-btn');
+      if (btn) btn.style.display = 'none';
     }
+
+    document.getElementById('space').style.height = '65px';
 
     clearInterval(timerInterval);
     state.timerEnd = Date.now() + REST_MS;
@@ -573,9 +558,8 @@
     const remaining = Math.max(0, state.timerEnd - Date.now());
     const m = Math.floor(remaining / 60000); const s = Math.floor((remaining % 60000) / 1000);
     const timeStr = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
-    document.getElementById('timer-display').textContent = timeStr;
 
-    const floatingDisplay = document.getElementById('floating-timer-display');
+    const floatingDisplay = document.getElementById('timer-display');
     if (floatingDisplay) {
       floatingDisplay.textContent = timeStr;
     }
@@ -587,13 +571,15 @@
   }
 
   function stopTimer() {
-    const restMode = document.getElementById('timer');
-    const progressMode = document.getElementById('progress current');
-    restMode.style.display = 'none';
-    progressMode.style.display = 'block';
+    document.getElementById('timer').classList.remove('active');
+    document.getElementById('space').style.height = '0px';
 
     const timerCard = document.querySelector(".exercise-card.current-timer");
-    if (timerCard) timerCard.classList.replace("current-timer", "current");
+    if (timerCard) {
+      timerCard.classList.replace("current-timer", "current");
+      const btn = timerCard.querySelector('.action-btn');
+      if (btn) btn.style.display = '';
+    }
 
     state.timerEnd = 0; state.timerNextEx = null;
     saveState();
@@ -643,6 +629,8 @@
   // Инициализация приложения
   loadDefaultData().then(() => {
     state = loadState();
+    state.timerEnd = 0; state.timerNextEx = null;
+    saveState(); clearInterval(timerInterval);
     renderGroups();
     const versionInfo = document.getElementById('version-info');
     if (versionInfo) versionInfo.textContent = `${STORAGE_KEY}_${dataLastUpdated}`;
