@@ -593,7 +593,7 @@
 
   window.addMinute = () => {
     state.timerEnd += 60000; saveState(); updateTimerUI();
-    const timerDisplay = document.querySelector(".timer-display");
+    const timerDisplay = document.getElementById("timer-display");
     if (timerDisplay) {
       timerDisplay.classList.remove('add-minute');
       void timerDisplay.offsetWidth; 
