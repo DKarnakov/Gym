@@ -593,13 +593,13 @@
 
   window.addMinute = () => {
     state.timerEnd += 60000; saveState(); updateTimerUI();
-    const timerLabel = document.querySelector(".timer-label");
-    if (timerLabel) {
-      timerLabel.classList.remove('add-minute');
-      void timerLabel.offsetWidth; 
-      timerLabel.classList.add('add-minute');
+    const timerDisplay = document.querySelector(".timer-display");
+    if (timerDisplay) {
+      timerDisplay.classList.remove('add-minute');
+      void timerDisplay.offsetWidth; 
+      timerDisplay.classList.add('add-minute');
       setTimeout(() => {
-        timerLabel.classList.remove('add-minute');
+        timerDisplay.classList.remove('add-minute');
       }, 400);
     }
   };
