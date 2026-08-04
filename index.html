@@ -33,6 +33,8 @@
     .screen.active { display: flex; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
+    #fx{position:fixed;inset:0;z-index:900;pointer-events:none}
+
     h1 { font-size: 28px; font-weight: 700; margin: 0 0 20px; }
     .btn-group { display: flex; flex-direction: column; gap: 10px; }
     .btn-group .btn {
@@ -185,6 +187,7 @@
   </style>
 </head>
 <body>
+  <canvas id="fx"></canvas>
   <div id="app">
     <div id="group-screen" class="screen active">
       <h1>Тренировка</h1>
@@ -533,6 +536,7 @@
       state.timerNextEx = { complete: true }; state.timerEnd = 0; saveState();
       completeMode.style.display = 'flex';
       document.getElementById('overlay').classList.add('active');
+      setTimeout(() => CONF.fire(), 140)
       return;
     }
 
@@ -641,6 +645,75 @@
       }
     });
   });
+  
+  const CONF = (() => {
+  const cv = document.getElementById('fx'), cx = cv.getContext('2d');
+  let W, H, ps = [], raf = null;
+  const COLORS = ['#FFC24B','#FF6A5C','#C7F04C','#3BD5C5','#7C9EFF','#FF5DA2','#FFFFFF'];
+  const RM = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function resize(){
+    const d = Math.min(devicePixelRatio || 1, 2);
+    W = innerWidth; H = innerHeight;
+    cv.width = W * d; cv.height = H * d;
+    cx.setTransform(d, 0, 0, d, 0, 0);
+  }
+  addEventListener('resize', resize); resize();
+
+  function burst(x, ang, count, spread, power){
+    for(let i = 0; i < count; i++){
+      if(ps.length > 1400) return;
+      const a = ang + (Math.random() - .5) * spread;
+      const v = power * (.55 + Math.random() * .75);
+      ps.push({
+        x, y: H + 14,
+        vx: Math.cos(a) * v, vy: Math.sin(a) * v,
+        w: 3 + Math.random() * 4, h: 5 + Math.random() * 5,
+        c: COLORS[(Math.random() * COLORS.length) | 0],
+        r: Math.random() * Math.PI, vr: (Math.random() - .5) * .28,
+        ph: Math.random() * 6.28, f: .08 + Math.random() * .12,
+        g: .11 + Math.random() * .07, o: 1, life: 0,
+        shape: Math.random() < .16 ? 'c' : (Math.random() < .3 ? 's' : 'r')
+      });
+    }
+  }
+  function volley(k){
+    burst(W * .06, -Math.PI/2 + .45, 140*k, 1.1, 18);
+    burst(W * .94, -Math.PI/2 - .45, 140*k, 1.1, 18);
+    burst(W * .50, -Math.PI/2,       90*k, .6, 16);
+  }
+  function fire(){
+    const k = RM ? .3 : 1;
+    volley(k);
+    if(!RM){
+      setTimeout(() => { burst(W*.25,-Math.PI/2+.3,50,.8,13); burst(W*.75,-Math.PI/2-.3,50,.8,13); }, 300);
+      setTimeout(() => burst(W*.5,-Math.PI/2,70,1.2,14), 650);
+    }
+    if(!raf) loop();
+  }
+  function loop(){
+    raf = requestAnimationFrame(loop);
+    cx.clearRect(0, 0, W, H);
+    for(let i = ps.length - 1; i >= 0; i--){
+      const p = ps[i];
+      p.vy += p.g; p.vx *= .992; p.vy *= .995;
+      p.x += p.vx; p.y += p.vy;
+      p.r += p.vr; p.ph += p.f; p.life++;
+      if(p.life > 110) p.o -= .025;
+      if(p.o <= 0 || (p.y > H + 60 && p.vy > 0)){ ps.splice(i, 1); continue; }
+      cx.save();
+      cx.translate(p.x, p.y); cx.rotate(p.r);
+      cx.scale(1, Math.sin(p.ph));
+      cx.globalAlpha = Math.max(p.o, 0);
+      cx.fillStyle = p.c;
+      if(p.shape === 'c'){ cx.beginPath(); cx.arc(0, 0, p.w * .5, 0, 6.283); cx.fill(); }
+      else{ const hh = p.shape === 's' ? p.h * 1.8 : p.h; cx.fillRect(-p.w/2, -hh/2, p.w, hh); }
+      cx.restore();
+    }
+    if(!ps.length){ cancelAnimationFrame(raf); raf = null; cx.clearRect(0, 0, W, H); }
+  }
+  return { fire };
+})();
 
   // Инициализация приложения
   loadDefaultData().then(() => {
