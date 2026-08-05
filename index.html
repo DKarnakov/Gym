@@ -107,11 +107,11 @@
     .next-label { font-size: 10px; color: var(--text); text-transform: uppercase; letter-spacing: 1.2px; margin-bottom: 6px; }
 
     #complete-mode { display: none; flex-direction: column; align-items: center; justify-content: center; text-align: center; width: 90%; max-width: 320px; padding: 20px; }
-    #complete-mode .trophy { font-size: 64px; margin-bottom: 16px; }
     #complete-mode h2 { color: white; font-size: 24px; margin: 0 0 8px; }
     #complete-mode p { color: rgba(255,255,255,0.7); font-size: 16px; margin: 0 0 24px; }
     #complete-mode .timer-btn { width: 100%; margin-bottom: 10px; }
     #complete-mode .btn-secondary { background: rgba(255,255,255,0.15); color: white; }
+    #trophy { font-size: 64px; margin-bottom: 16px; }
 
     .drop-indicator {
       height: 100px;
@@ -216,7 +216,7 @@
 
   <div id="overlay">
     <div id="complete-mode">
-      <div class="trophy">🏆</div>
+      <div id="trophy">🏆</div>
       <h2>Тренировка завершена!</h2>
       <p>Все упражнения выполнены. Отличная работа!</p>
       <button class="action-btn done" onclick="closeOverlay()">Закрыть</button>
@@ -536,7 +536,7 @@
       state.timerNextEx = { complete: true }; state.timerEnd = 0; saveState();
       completeMode.style.display = 'flex';
       document.getElementById('overlay').classList.add('active');
-      setTimeout(() => CONF.fire(), 140)
+      //setTimeout(() => CONF.fire(), 140)
       return;
     }
 
@@ -678,9 +678,9 @@
     }
   }
   function volley(k){
-    burst(W * .06, -Math.PI/2 + .45, 90*k, .6, 16);
-    burst(W * .94, -Math.PI/2 - .45, 90*k, .6, 16);
-    burst(W * .50, -Math.PI/2,       140*k, 1.1, 18);
+    burst(W * .06, -Math.PI/2 + .45, 140*k, 1.1, 18);
+    burst(W * .94, -Math.PI/2 - .45, 140*k, 1.1, 18);
+    burst(W * .50, -Math.PI/2,       90*k, .6, 16);
   }
   function fire(){
     const k = RM ? .3 : 1;
@@ -714,6 +714,8 @@
   }
   return { fire };
 })();
+
+  document.getElementById('trophy').addEventListener('touchstart', CONF.fire, false);
 
   // Инициализация приложения
   loadDefaultData().then(() => {
